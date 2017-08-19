@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -14,16 +15,17 @@ int main(int argc, char **argv)
 	if (!src.data)
 		return -1;
 
-	imshow("Source Image", src);
+	//namedWindow("Source Image", CV_WINDOW_KEEPRATIO);
+	//imshow("Source Image", src);
 
 	Mat src_gray;
 	cvtColor(src, src_gray, COLOR_BGR2GRAY);
 
-	GaussianBlur(src_gray, src_gray, Size(3, 3), 0, 0);
+	GaussianBlur(src_gray, src_gray, Size(5, 5), 0, 0);
 
-	double min_radius = src.cols / 50;
+	double min_radius = (double)max<int>(src.cols, src.rows) / 50;
 	vector<Vec3f> circles;
-	HoughCircles(src_gray, circles, HOUGH_GRADIENT, 1, min_radius * 2, 100, 65, min_radius);
+	HoughCircles(src_gray, circles, HOUGH_GRADIENT, 1, min_radius * 1.5, 20, 45, min_radius, min_radius * 2);
 
 	cout << circles.size() << endl;
 
@@ -33,9 +35,10 @@ int main(int argc, char **argv)
 		int radius = cvRound(circles[i][2]);
 
 		circle(src, center, 1, Scalar(0, 255, 0), -1, 8, 0);
-		circle(src, center, radius, Scalar(0, 0, 255), 1, 8, 0);
+		circle(src, center, radius, Scalar(0, 0, 255), 3, 8, 0);
 	}
 
+	namedWindow("Result", CV_WINDOW_KEEPRATIO);
 	imshow("Result", src);
 
 	waitKey(0);
