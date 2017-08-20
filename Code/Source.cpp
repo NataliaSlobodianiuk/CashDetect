@@ -6,6 +6,7 @@ using namespace std;
 using namespace cv;
 
 void rearrangeQuadrants(Mat* magnitude);
+int matcher(Mat& crop, Scalar avgPixelIntensity);
 Mat multiplyInFrequencyDomain(Mat& image, Mat& mask);
 Mat magnitude(Mat& first,Mat& second);
 
@@ -13,6 +14,13 @@ int main(int argc, char* argv[]) {
 
 	Mat img = imread("money3.jpg");
 	Mat input_image = imread("money3.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	Mat cropppedImg;
+	Mat clone_img = img.clone();
+	RotatedRect minRect;
+	Mat M, rotated, rotated1, cropped, cropped1;
+
+	Scalar color = Scalar(255, 255, 255);
+	Scalar avgPixelIntensity;
 
 	//The size of the picture for fast Fourier transform should be 2 in degree
 	Mat padded_image;
@@ -110,15 +118,17 @@ int main(int argc, char* argv[]) {
 
 	/// Find contours
 	findContours(res1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
-	Mat cropppedImg;
-	Mat clone_img = img.clone();
-	RotatedRect minRect;
-	Mat M, rotated, cropped;
 
 	/// Draw contours
 	for (int i = 0; i< contours.size(); i++)
 	{
-		if ((contourArea(contours[i])>(clone_img.rows*clone_img.cols) / 450) && (contourArea(contours[i])<(clone_img.rows*clone_img.cols) / 130))
+		vector<Point> approx;
+		double epsilon = 0.075* arcLength(contours[i], true);
+
+		//Approximation to select only the correct contours that can form quadrangle
+		approxPolyDP(contours[i], approx, epsilon, true);
+
+		if (approx.size() == 4 && (contourArea(contours[i])>(clone_img.rows*clone_img.cols) / 450) && (contourArea(contours[i])<(clone_img.rows*clone_img.cols) / 130))
 		{
 			drawContours(img, contours, i, color, CV_FILLED, 8, hierarchy, 0, Point());
 			//finding minimum rectangle that contain our contour
@@ -130,8 +140,23 @@ int main(int argc, char* argv[]) {
 				minRect.angle += 90;
 			}
 			M = getRotationMatrix2D(minRect.center, minRect.angle, 1.0);
+
+			//get minimum rotated rectangle with denomination banknotes
 			warpAffine(clone_img, rotated, M, img.size(), INTER_CUBIC);
 			getRectSubPix(rotated, rect_size, minRect.center, cropped);
+
+			//get minimum rotated rectangle with contour of denomination banknotes
+			warpAffine(img, rotated1, M, img.size(), INTER_CUBIC);
+			getRectSubPix(rotated1, rect_size, minRect.center, cropped1);
+			cvtColor(cropped1, cropped1, CV_BGR2GRAY);
+			cropped1 = cropped1 <254;
+
+			//calculation average R, G, B component in rectangle with denomination banknotes
+			avgPixelIntensity = mean(cropped);
+
+			//function that calculate denomination of banknotes
+			int nominal = matcher(cropped1, avgPixelIntensity);
+			cout << nominal;
 
 		}
 
@@ -142,6 +167,52 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+int matcher(Mat& crop, Scalar avgPixelIntensity)
+{
+	int money_emblem = 0;
+	double c = 0;
+	bool flag = false;
+
+	//array binary contour emblem of banknotes
+	Mat image_array[4];
+	image_array[0] = imread("emblem_10.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	image_array[1] = imread("emblem_20.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	image_array[2] = imread("emblem_50.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	image_array[3] = imread("emblem_200.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+
+	//compare input contour with binaries emblem
+	for (int i = 0; i < 4; i++)
+	{
+		c = matchShapes(crop, image_array[i], CV_CONTOURS_MATCH_I1, 0.0);
+		if (c < 0.02) flag = true;
+	}
+
+	//if input contour owned one of binaries emblem, we can determine denomination by average pixel intensity
+	if (flag == true)
+	{
+		if ((avgPixelIntensity.val[0]>135 && avgPixelIntensity.val[0] < 170) && (avgPixelIntensity.val[1]>85 && avgPixelIntensity.val[1] < 110) && (avgPixelIntensity.val[2]>65 && avgPixelIntensity.val[2] < 90))
+		{
+			money_emblem = 10;
+		}
+
+		if ((avgPixelIntensity.val[0]>145 && avgPixelIntensity.val[0] < 170) && (avgPixelIntensity.val[1]>100 && avgPixelIntensity.val[1] < 115) && (avgPixelIntensity.val[2]>30 && avgPixelIntensity.val[2] < 50))
+		{
+			money_emblem = 20;
+		}
+
+		if ((avgPixelIntensity.val[0]>160 && avgPixelIntensity.val[0] < 180) && (avgPixelIntensity.val[1]>80 && avgPixelIntensity.val[1] < 100) && (avgPixelIntensity.val[2]>30 && avgPixelIntensity.val[2] < 45))
+		{
+			money_emblem = 50;
+		}
+
+		if ((avgPixelIntensity.val[0]>175 && avgPixelIntensity.val[0] < 195) && (avgPixelIntensity.val[1]>100 && avgPixelIntensity.val[1] < 120) && (avgPixelIntensity.val[2]>45 && avgPixelIntensity.val[2] < 63))
+		{
+			money_emblem = 200;
+		}
+	}
+
+	return money_emblem;
+}
 
 void rearrangeQuadrants(Mat* magnitude) {
 	// rearrange the image so that the bright stuff is in the middle
