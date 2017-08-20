@@ -156,12 +156,20 @@ int main(int argc, char* argv[]) {
 
 			//function that calculate denomination of banknotes
 			int nominal = matcher(cropped1, avgPixelIntensity);
+			
+			//write nominal on banknot
+			if (nominal != 0)
+			{
+				putText(clone_img, to_string(nominal), minRect.center, FONT_HERSHEY_PLAIN, 3.0, CV_RGB(0, 255, 0), 2.0);
+			}
+
 			cout << nominal;
 
 		}
 
 	}
-	imshow("result", res1);
+	namedWindow("result", 0);
+	imshow("result", clone_img);
 
 	waitKey(0);
 	return 0;
