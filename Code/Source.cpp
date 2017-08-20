@@ -85,7 +85,31 @@ int main(int argc, char* argv[]) {
 	//Calculation magnitude
 	Mat result = magnitude(xSobel_filtered_image, ySobel_filtered_image);
 
+	Mat res1;
 	normalize(result, result, 0, 1, CV_MINMAX);
+	result.convertTo(res1, CV_8UC1, 255, 0);
+
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+
+	int dilation_size = 1;
+
+	Mat element = getStructuringElement(MORPH_RECT,
+		Size(2 * dilation_size + 1, 2 * dilation_size + 1),
+		Point(dilation_size, dilation_size));
+	threshold(res1, res1, 100, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	for (int i = 0; i < 3; i++)
+	{
+		dilate(res1, res1, element);
+		dilate(res1, res1, element);
+		erode(res1, res1, element);
+	}
+	erode(res1, res1, element);
+	erode(res1, res1, element);
+
+
+	/// Find contours
+	findContours(res1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
 
 	imshow("result", res1);
 
