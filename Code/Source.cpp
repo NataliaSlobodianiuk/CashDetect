@@ -110,7 +110,32 @@ int main(int argc, char* argv[]) {
 
 	/// Find contours
 	findContours(res1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
+	Mat cropppedImg;
+	Mat clone_img = img.clone();
+	RotatedRect minRect;
+	Mat M, rotated, cropped;
 
+	/// Draw contours
+	for (int i = 0; i< contours.size(); i++)
+	{
+		if ((contourArea(contours[i])>(clone_img.rows*clone_img.cols) / 450) && (contourArea(contours[i])<(clone_img.rows*clone_img.cols) / 130))
+		{
+			drawContours(img, contours, i, color, CV_FILLED, 8, hierarchy, 0, Point());
+			//finding minimum rectangle that contain our contour
+			minRect = minAreaRect(Mat(contours[i]));
+			Size rect_size = minRect.size;
+			if (rect_size.width < rect_size.height)
+			{
+				swap(rect_size.width, rect_size.height);
+				minRect.angle += 90;
+			}
+			M = getRotationMatrix2D(minRect.center, minRect.angle, 1.0);
+			warpAffine(clone_img, rotated, M, img.size(), INTER_CUBIC);
+			getRectSubPix(rotated, rect_size, minRect.center, cropped);
+
+		}
+
+	}
 	imshow("result", res1);
 
 	waitKey(0);
