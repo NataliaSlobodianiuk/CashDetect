@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>../data/coins_10.jpg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>../data/A4/coins_1.jpg ../data/A4/coins_2.jpg ../data/A4/coins_3.jpg ../data/A4/coins_4.jpg ../data/A4/coins_5.jpg ../data/A4/coins_6.jpg ../data/A4/coins_7.jpg ../data/A4/coins_8.jpg ../data/A4/coins_9.jpg ../data/A4/coins_10.jpg ../data/A4/coins_11.jpg ../data/A4/coins_12.jpg ../data/A4/coins_13.jpg ../data/A4/coins_14.jpg ../data/A4/coins_15.jpg ../data/A4/coins_16.jpg ../data/A4/coins_17.jpg ../data/A4/coins_18.jpg ../data/A4/coins_19.jpg ../data/A4/coins_20.jpg ../data/A4/coins_21.jpg ../data/A4/coins_22.jpg ../data/A4/coins_23.jpg ../data/A4/coins_24.jpg ../data/A4/coins_25.jpg ../data/A4/coins_26.jpg ../data/A4/coins_27.jpg ../data/A4/coins_28.jpg ../data/A4/coins_29.jpg ../data/A4/coins_30.jpg ../data/A4/coins_31.jpg ../data/A4/coins_32.jpg ../data/A4/coins_33.jpg ../data/A4/coins_34.jpg ../data/A4/coins_35.jpg ../data/A4/coins_36.jpg ../data/A4/coins_37.jpg ../data/A4/coins_38.jpg ../data/A4/coins_39.jpg ../data/A4/coins_40.jpg ../data/A4/coins_41.jpg ../data/A4/coins_42.jpg ../data/A4/coins_43.jpg ../data/A4/coins_44.jpg ../data/A4/coins_45.jpg</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <ctime>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -14,45 +15,70 @@ double getBGRDifference(Mat& img, Point center);
 
 int main(int argc, char **argv)
 {
-	Mat src = imread(argv[1]);
-
-	if (!src.data)
-		return -1;
-
-	//namedWindow("Source Image", CV_WINDOW_KEEPRATIO);
-	//imshow("Source Image", src);
-
-	Mat src_gray;
-	cvtColor(src, src_gray, COLOR_BGR2GRAY);
-
-	GaussianBlur(src_gray, src_gray, Size(5, 5), 0, 0);
-
-	double min_radius = (double)max<int>(src.cols, src.rows) / 50;
-	vector<Vec3f> circles;
-	HoughCircles(src_gray, circles, HOUGH_GRADIENT, 1, min_radius * 1.5, 20, 45, min_radius, min_radius * 2);
-
-	cout << "Number of coins: " << circles.size() << ".\n";
-
-	int sum = 0;
-	for (size_t i = 0; i < circles.size(); i++)
+	for (int i = 1; i < argc; i++)
 	{
-		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-		int radius = cvRound(circles[i][2]);
+		Mat src = imread(argv[i]);
 
-		int value = getCoinValue(src, center, radius);
-		sum += value;
+		if (!src.data)
+			return -1;
 
-		circle(src, center, 1, Scalar(0, 255, 0), -1, 8, 0);
-		circle(src, center, radius, Scalar(0, 0, 255), 3, 8, 0);
+		//namedWindow("Source Image", CV_WINDOW_KEEPRATIO);
+		//imshow("Source Image", src);
 
-		putText(src, to_string(value), Point(center.x - radius, center.y - radius), FONT_HERSHEY_DUPLEX, 1, Scalar::all(255));
+		clock_t begin = clock();
+
+		resize(src, src, Size(3600, 2160));
+
+		Mat src_gray;
+		cvtColor(src, src_gray, COLOR_BGR2GRAY);
+
+		/*double alpha = 1.2;
+		int beta = 0;
+		for (int y = 0; y < src_gray.rows; y++)
+		{
+			for (int x = 0; x < src_gray.cols; x++)
+			{
+				src_gray.at<uchar>(y, x) =
+					saturate_cast<uchar>(alpha*(src_gray.at<uchar>(y, x)) + beta);
+			}
+		}*/
+
+		//blur(src_gray, src_gray, Size(7, 7));
+		//GaussianBlur(src_gray, src_gray, Size(7, 7), 0);
+		medianBlur(src_gray, src_gray, 7);
+
+		double min_radius = (double)max<int>(src.cols, src.rows) / 50;
+		vector<Vec3f> circles;
+		HoughCircles(src_gray, circles, HOUGH_GRADIENT, 3, min_radius * 1.5, 75, 150, min_radius, min_radius * 2);
+
+		cout << "Number of coins: " << circles.size() << ".\n";
+
+		int sum = 0;
+		for (size_t i = 0; i < circles.size(); i++)
+		{
+			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+			int radius = cvRound(circles[i][2]);
+
+			int value = getCoinValue(src, center, radius);
+			sum += value;
+
+			circle(src, center, 1, Scalar(0, 255, 0), 5, 8, 0);
+			circle(src, center, radius, Scalar(0, 0, 255), 10, 8, 0);
+
+			putText(src, to_string(value), Point(center.x - radius, center.y - radius), FONT_HERSHEY_SCRIPT_COMPLEX, 3, Scalar::all(0), 3);
+		}
+
+		clock_t end = clock();
+
+		cout << "Sum: " << sum / 100 << " hryvnia(s) " << sum % 100 << " hryvnia coins." << endl;
+		cout << "Time elapsed: " << (double)(end - begin) / CLOCKS_PER_SEC << " second(s)" << endl;
+
+		namedWindow("Result", CV_WINDOW_KEEPRATIO);
+		imshow("Result", src);
+
+		waitKey(0);
 	}
-	cout << "Sum: " << sum / 100 << " hryvnia(s) " << sum % 100 << " hryvnia coins." << endl;
 
-	namedWindow("Result", CV_WINDOW_KEEPRATIO);
-	imshow("Result", src);
-
-	waitKey(0);
 	return 0;
 }
 
@@ -60,19 +86,19 @@ int getCoinValue(Mat& img, Point center, double radius)
 {
 	int value = -1;
 
+	double bgr_difference = getBGRDifference(img, center);
+	
 	if (radius < 100)
 	{
 		value = 10;
 	}
-	else if (radius >= 100 && radius < 130)
+	else if (radius >= 100 && radius < 125)
 	{
 		value = 25;
 	}
-	else
+	else if (radius >= 125 && radius < 150)
 	{
-		double bgr_difference = getBGRDifference(img, center);
-
-		if (bgr_difference > 40)
+		if (bgr_difference > 30)
 		{
 			value = 50;
 		}
@@ -80,6 +106,10 @@ int getCoinValue(Mat& img, Point center, double radius)
 		{
 			value = 5;
 		}
+	}
+	else
+	{
+		value = 100;
 	}
 
 	return value;
