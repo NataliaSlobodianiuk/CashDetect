@@ -22,9 +22,6 @@ int main(int argc, char **argv)
 		if (!src.data)
 			return -1;
 
-		//namedWindow("Source Image", CV_WINDOW_KEEPRATIO);
-		//imshow("Source Image", src);
-
 		clock_t begin = clock();
 
 		resize(src, src, Size(3600, 2160));
@@ -32,24 +29,11 @@ int main(int argc, char **argv)
 		Mat src_gray;
 		cvtColor(src, src_gray, COLOR_BGR2GRAY);
 
-		/*double alpha = 1.2;
-		int beta = 0;
-		for (int y = 0; y < src_gray.rows; y++)
-		{
-			for (int x = 0; x < src_gray.cols; x++)
-			{
-				src_gray.at<uchar>(y, x) =
-					saturate_cast<uchar>(alpha*(src_gray.at<uchar>(y, x)) + beta);
-			}
-		}*/
-
-		//blur(src_gray, src_gray, Size(7, 7));
-		//GaussianBlur(src_gray, src_gray, Size(7, 7), 0);
 		medianBlur(src_gray, src_gray, 7);
 
 		double min_radius = (double)max<int>(src.cols, src.rows) / 50;
 		vector<Vec3f> circles;
-		HoughCircles(src_gray, circles, HOUGH_GRADIENT, 3, min_radius * 1.5, 75, 150, min_radius, min_radius * 2);
+		HoughCircles(src_gray, circles, HOUGH_GRADIENT, 3, min_radius * 1.5, 65, 150, min_radius, min_radius * 2);
 
 		cout << "Number of coins: " << circles.size() << ".\n";
 
@@ -76,7 +60,12 @@ int main(int argc, char **argv)
 		namedWindow("Result", CV_WINDOW_KEEPRATIO);
 		imshow("Result", src);
 
-		waitKey(0);
+		int key = waitKey(0);
+
+		if (key == 27)
+		{
+			return 0;
+		}
 	}
 
 	return 0;
@@ -88,15 +77,15 @@ int getCoinValue(Mat& img, Point center, double radius)
 
 	double bgr_difference = getBGRDifference(img, center);
 	
-	if (radius < 100)
+	if (radius < 110)
 	{
 		value = 10;
 	}
-	else if (radius >= 100 && radius < 125)
+	else if (radius >= 110 && radius < 125)
 	{
 		value = 25;
 	}
-	else if (radius >= 125 && radius < 150)
+	else if (radius >= 125 && radius < 145)
 	{
 		if (bgr_difference > 30)
 		{
