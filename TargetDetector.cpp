@@ -1,28 +1,35 @@
 #include "TargetDetector.h"
 
 
-TargetDetector::TargetDetector(Ptr<FeatureDetector> featureDetector, Ptr<DescriptorExtractor> descriptorExtractor, Ptr<DescriptorMatcher> descriptorMatcher,
-	size_t targetTag, const Scalar& contourColor, bool useInliersGlobalMatch) :
-	_featureDetector(featureDetector), _descriptorExtractor(descriptorExtractor), _descriptorMatcher(descriptorMatcher/*->clone(true)*/),
-	_targetTag(targetTag), _contourColor(contourColor), _useInliersGlobalMatch(useInliersGlobalMatch),
-	_currentLODIndex(0) {}
+TargetDetector::TargetDetector(Ptr<FeatureDetector> _featureDetector, Ptr<DescriptorExtractor> _descriptorExtractor, Ptr<DescriptorMatcher> _descriptorMatcher,
+	size_t _targetTag, bool _useInliersGlobalMatch) :
+	featureDetector(_featureDetector), descriptorExtractor(_descriptorExtractor), descriptorMatcher(_descriptorMatcher/*->clone(true)*/),
+	targetTag(_targetTag), useInliersGlobalMatch(_useInliersGlobalMatch),
+	currentLODIndex(0) {}
 
 TargetDetector::~TargetDetector() {}
 
 
 bool TargetDetector::setupTargetRecognition(const Mat& targetImage, const Mat& targetROIs) {
-	_targetsImage.push_back(targetImage);
-	_targetsKeypoints.push_back(vector<KeyPoint>());
-	_targetsDescriptors.push_back(Mat());
-	_currentLODIndex = _targetsKeypoints.size() - 1;
+	targetsImage.push_back(targetImage);
+	targetsKeypoints.push_back(vector<KeyPoint>());
+	targetsDescriptors.push_back(Mat());
+	currentLODIndex = targetsKeypoints.size() - 1;
 
 	// detect target keypoints
-	_featureDetector->detect(_targetsImage[_currentLODIndex], _targetsKeypoints[_currentLODIndex], targetROIs);
-	if (_targetsKeypoints[_currentLODIndex].size() < 4) { return false; }
+	featureDetector->detect(targetsImage[currentLODIndex], targetsKeypoints[currentLODIndex], targetROIs);
+	// as research shows 
+	// if there in less than 4 keypoints 
+	// it isn`t enough for detection
+	if (targetsKeypoints[currentLODIndex].size() < 4) {
+		return false;
+	}
 
 	// compute descriptors
-	_descriptorExtractor->compute(_targetsImage[_currentLODIndex], _targetsKeypoints[_currentLODIndex], _targetsDescriptors[_currentLODIndex]);
-	if (_targetsDescriptors[_currentLODIndex].rows < 4) { return false; }
+	descriptorExtractor->compute(targetsImage[currentLODIndex], targetsKeypoints[currentLODIndex], targetsDescriptors[currentLODIndex]);
+	if (targetsDescriptors[currentLODIndex].rows < 4) {
+		return false; 
+	}
 
 
 	// train matcher to speedup recognition in case flann is used
@@ -30,8 +37,8 @@ bool TargetDetector::setupTargetRecognition(const Mat& targetImage, const Mat& t
 	_descriptorMatcher->train();*/
 
 	// associate key points to ROIs
-	if (!_useInliersGlobalMatch) {
-		return setupTargetROIs(_targetsKeypoints[_currentLODIndex], targetROIs);
+	if (!useInliersGlobalMatch) {
+		return setupTargetROIs(targetsKeypoints[currentLODIndex], targetROIs);
 	}
 	else {
 		return true;
@@ -39,13 +46,13 @@ bool TargetDetector::setupTargetRecognition(const Mat& targetImage, const Mat& t
 }
 
 
-bool TargetDetector::setupTargetROIs(const vector<KeyPoint>& targetKeypoints, const Mat& targetROIs) {
-	_targetKeypointsAssociatedROIsIndexes.push_back(vector<size_t>());
-	_numberOfKeypointInsideContours.push_back(vector<size_t>());
+bool TargetDetector::setupTargetROIs(const vector<KeyPoint>& _targetKeypoints, const Mat& targetROIs) {
+	targetKeypointsAssociatedROIsIndexes.push_back(vector<size_t>());
+	numberOfKeypointInsideContours.push_back(vector<size_t>());
 
-	if (targetKeypoints.empty()) { return false; }
+	if (_targetKeypoints.empty()) { return false; }
 
-	_targetKeypointsAssociatedROIsIndexes[_currentLODIndex].resize(targetKeypoints.size());
+	targetKeypointsAssociatedROIsIndexes[currentLODIndex].resize(_targetKeypoints.size());
 
 	vector< vector<Point> > targetROIsContours;
 	vector<Vec4i> hierarchy;
@@ -53,25 +60,25 @@ bool TargetDetector::setupTargetROIs(const vector<KeyPoint>& targetKeypoints, co
 
 	if (targetROIsContours.empty()) { return false; }
 
-	int targetKeypointsSize = targetKeypoints.size();
+	int targetKeypointsSize = _targetKeypoints.size();
 #pragma omp parallel for
 	for (int targetKeypointsIndex = 0; targetKeypointsIndex < targetKeypointsSize; ++targetKeypointsIndex) {
 		for (size_t contourIndex = 0; contourIndex < targetROIsContours.size(); ++contourIndex) {
 			// point inside contour or in the border
-			Point2f point = targetKeypoints[targetKeypointsIndex].pt;
+			Point2f point = _targetKeypoints[targetKeypointsIndex].pt;
 			if (cv::pointPolygonTest(targetROIsContours[contourIndex], point, false) >= 0) {
-				_targetKeypointsAssociatedROIsIndexes[_currentLODIndex][targetKeypointsIndex] = contourIndex;
+				targetKeypointsAssociatedROIsIndexes[currentLODIndex][targetKeypointsIndex] = contourIndex;
 				break;
 			}
 		}
 	}
 
-	_numberOfKeypointInsideContours[_currentLODIndex].clear();
-	_numberOfKeypointInsideContours[_currentLODIndex].resize(targetROIsContours.size(), 0);
+	numberOfKeypointInsideContours[currentLODIndex].clear();
+	numberOfKeypointInsideContours[currentLODIndex].resize(targetROIsContours.size(), 0);
 
-	for (size_t i = 0; i < _targetKeypointsAssociatedROIsIndexes[_currentLODIndex].size(); ++i) {
-		size_t contourIndex = _targetKeypointsAssociatedROIsIndexes[_currentLODIndex][i];
-		++_numberOfKeypointInsideContours[_currentLODIndex][contourIndex];
+	for (size_t i = 0; i < targetKeypointsAssociatedROIsIndexes[currentLODIndex].size(); ++i) {
+		size_t contourIndex = targetKeypointsAssociatedROIsIndexes[currentLODIndex][i];
+		++numberOfKeypointInsideContours[currentLODIndex][contourIndex];
 	}
 
 	return true;
@@ -82,9 +89,9 @@ void TargetDetector::updateCurrentLODIndex(const Mat& imageToAnalyze, float targ
 	int halfImageResolution = imageToAnalyze.cols / 2;
 
 	size_t newLODIndex = 0;
-	for (size_t i = 1; i < _targetsImage.size(); ++i) {
-		int previousLODWidthResolution = _targetsImage[i - 1].cols;
-		int currentLODWidthResolution = _targetsImage[i].cols;
+	for (size_t i = 1; i < targetsImage.size(); ++i) {
+		int previousLODWidthResolution = targetsImage[i - 1].cols;
+		int currentLODWidthResolution = targetsImage[i].cols;
 
 		if (halfImageResolution > currentLODWidthResolution) {
 			newLODIndex = i; // use bigger resolution
@@ -108,14 +115,14 @@ void TargetDetector::updateCurrentLODIndex(const Mat& imageToAnalyze, float targ
 		}
 	}
 
-	_currentLODIndex = newLODIndex;
+	currentLODIndex = newLODIndex;
 }
 
 
 Ptr<DetectorResult> TargetDetector::analyzeImage(const vector<KeyPoint>& keypointsQueryImage, const Mat& descriptorsQueryImage,
 	float maxDistanceRatio, float reprojectionThreshold, double confidence, int maxIters, size_t minimumNumberInliers) {
 	vector<DMatch> matches;
-	ImageUtils::matchDescriptorsWithRatioTest(_descriptorMatcher, descriptorsQueryImage, _targetsDescriptors[_currentLODIndex], matches, maxDistanceRatio);
+	ImageUtils::matchDescriptorsWithRatioTest(descriptorMatcher, descriptorsQueryImage, targetsDescriptors[currentLODIndex], matches, maxDistanceRatio);
 	//_descriptorMatcher->match(descriptorsQueryImage, _targetDescriptors, matches);
 	//_descriptorMatcher->match(descriptorsQueryImage, matches); // flann speedup
 
@@ -126,35 +133,35 @@ Ptr<DetectorResult> TargetDetector::analyzeImage(const vector<KeyPoint>& keypoin
 	Mat homography;
 	vector<DMatch> inliers;
 	vector<unsigned char> inliersMaskOut;
-	ImageUtils::refineMatchesWithHomography(keypointsQueryImage, _targetsKeypoints[_currentLODIndex], matches, homography, inliers, inliersMaskOut, reprojectionThreshold, confidence, maxIters, minimumNumberInliers);
+	ImageUtils::refineMatchesWithHomography(keypointsQueryImage, targetsKeypoints[currentLODIndex], matches, homography, inliers, inliersMaskOut, reprojectionThreshold, confidence, maxIters, minimumNumberInliers);
 
 	if (inliers.size() < minimumNumberInliers) {
 		return new DetectorResult();
 	}
 
 	float bestROIMatch = 0;
-	if (_useInliersGlobalMatch) {
+	if (useInliersGlobalMatch) {
 		bestROIMatch = (float)inliers.size() / (float)matches.size();
 	}
 	else {
 		bestROIMatch = computeBestROIMatch(inliers, minimumNumberInliers);
 	}
 
-	return new DetectorResult(_targetTag, vector<Point>(), _contourColor, bestROIMatch, _targetsImage[_currentLODIndex], _targetsKeypoints[_currentLODIndex], keypointsQueryImage, matches, inliers, inliersMaskOut, homography);
+	return new DetectorResult(targetTag, vector<Point>(), bestROIMatch, targetsImage[currentLODIndex], targetsKeypoints[currentLODIndex], keypointsQueryImage, matches, inliers, inliersMaskOut, homography);
 }
 
 
 float TargetDetector::computeBestROIMatch(const vector<DMatch>& inliers, size_t minimumNumberInliers) {
-	vector<size_t> roisInliersCounts(_numberOfKeypointInsideContours[_currentLODIndex].size(), 0);
+	vector<size_t> roisInliersCounts(numberOfKeypointInsideContours[currentLODIndex].size(), 0);
 
 	for (size_t i = 0; i < inliers.size(); ++i) {
-		size_t roiIndex = _targetKeypointsAssociatedROIsIndexes[_currentLODIndex][inliers[i].trainIdx];
+		size_t roiIndex = targetKeypointsAssociatedROIsIndexes[currentLODIndex][inliers[i].trainIdx];
 		++roisInliersCounts[roiIndex];
 	}
 
 	float bestROIMatch = 0;
 	for (size_t i = 0; i < roisInliersCounts.size(); ++i) {
-		size_t roiTotalCount = _numberOfKeypointInsideContours[_currentLODIndex][i];
+		size_t roiTotalCount = numberOfKeypointInsideContours[currentLODIndex][i];
 		if (roiTotalCount != 0) {
 			float roiMatch = (float)roisInliersCounts[i] / (float)roiTotalCount;
 			if (roiMatch > bestROIMatch && roisInliersCounts[i] > minimumNumberInliers) {

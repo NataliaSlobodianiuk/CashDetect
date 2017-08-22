@@ -120,6 +120,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CLI.cpp" />
+    <ClCompile Include="ConsoleInput.cpp" />
     <ClCompile Include="DetectorEvaluationResult.cpp" />
     <ClCompile Include="DetectorResult.cpp" />
     <ClCompile Include="GUI\GUIUtils.cpp" />
@@ -129,12 +131,16 @@
     <ClCompile Include="ImageUtils.cpp" />
     <ClCompile Include="libs\PerformanceTimer.cpp" />
     <ClCompile Include="libs\TimeUtils.cpp" />
+    <ClCompile Include="libs\Transformations\HomographyEstimator.cpp" />
+    <ClCompile Include="libs\Transformations\ModelEstimator.cpp" />
+    <ClCompile Include="libs\Transformations\Transformations.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="TargetDetector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cash.h" />
+    <ClInclude Include="CLI.h" />
     <ClInclude Include="Configs.h" />
+    <ClInclude Include="ConsoleInput.h" />
     <ClInclude Include="DetectorEvaluationResult.h" />
     <ClInclude Include="DetectorResult.h" />
     <ClInclude Include="GUI\GUIUtils.h" />
@@ -144,6 +150,9 @@
     <ClInclude Include="ImageUtils.h" />
     <ClInclude Include="libs\PerformanceTimer.h" />
     <ClInclude Include="libs\TimeUtils.h" />
+    <ClInclude Include="libs\Transformations\HomographyEstimator.h" />
+    <ClInclude Include="libs\Transformations\modelestimator.h" />
+    <ClInclude Include="libs\Transformations\Transformations.h" />
     <ClInclude Include="TargetDetector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

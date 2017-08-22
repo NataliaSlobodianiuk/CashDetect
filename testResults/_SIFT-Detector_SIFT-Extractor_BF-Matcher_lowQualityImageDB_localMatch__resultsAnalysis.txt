@@ -1,0 +1,4 @@
+>>>>> Detector image results analysis <<<<<
+
+5.JPG -> Precision: 1 | Recall: 1 | Accuracy: 1
+5__(2).JPG -> Precision: 1 | Recall: 1 | Accuracy: 1

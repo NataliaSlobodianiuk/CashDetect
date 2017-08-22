@@ -54,11 +54,23 @@
     <ClCompile Include="ImageAnalysis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CLI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsoleInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\Transformations\Transformations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\Transformations\ModelEstimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\Transformations\HomographyEstimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ImagePreprocessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +102,21 @@
       <Filter>Source Files\GUI</Filter>
     </ClInclude>
     <ClInclude Include="ImageAnalysis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CLI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleInput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\Transformations\Transformations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\Transformations\modelestimator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\Transformations\HomographyEstimator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

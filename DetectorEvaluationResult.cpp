@@ -3,17 +3,17 @@
 
 DetectorEvaluationResult::DetectorEvaluationResult() {}
 
-DetectorEvaluationResult::DetectorEvaluationResult(double precision, double recall, double accuracy) :
-	_precision(precision), _recall(recall), _accuracy(accuracy) {}
+DetectorEvaluationResult::DetectorEvaluationResult(double _precision, double _recall, double _accuracy) :
+	precision(_precision), recall(_recall), accuracy(_accuracy) {}
 
-DetectorEvaluationResult::DetectorEvaluationResult(size_t truePositives, size_t trueNegatives, size_t falsePositives, size_t falseNegatives) :
-	_truePositives(truePositives), _trueNegatives(trueNegatives), _falsePositives(falsePositives), _falseNegatives(falseNegatives) {
+DetectorEvaluationResult::DetectorEvaluationResult(size_t _truePositives, size_t _trueNegatives, size_t _falsePositives, size_t _falseNegatives) :
+	truePositives(_truePositives), trueNegatives(_trueNegatives), falsePositives(_falsePositives), falseNegatives(_falseNegatives) {
 
 	updateMeasures();
 }
 
 DetectorEvaluationResult::DetectorEvaluationResult(vector<size_t> results, vector<size_t> expectedResults) :
-	_truePositives(0), _trueNegatives(0), _falsePositives(0), _falseNegatives(0) {
+	truePositives(0), trueNegatives(0), falsePositives(0), falseNegatives(0) {
 	std::sort(results.begin(), results.end());
 	std::sort(expectedResults.begin(), expectedResults.end());
 
@@ -21,24 +21,24 @@ DetectorEvaluationResult::DetectorEvaluationResult(vector<size_t> results, vecto
 		vector<size_t>::iterator it = std::find(expectedResults.begin(), expectedResults.end(), results[resultsIndex]);
 
 		if (it != expectedResults.end()) {
-			++_truePositives;
+			++truePositives;
 			expectedResults.erase(it);
 		}
 		else {
-			++_falsePositives;
+			++falsePositives;
 		}
 	}
 
-	_falseNegatives = expectedResults.size();
+	falseNegatives = expectedResults.size();
 
 	updateMeasures();
 }
 
 DetectorEvaluationResult::DetectorEvaluationResult(Mat& votingMask, vector<Mat>& targetMasks, unsigned short votingMaskThreshold) :
-	_truePositives(0), _trueNegatives(0), _falsePositives(0), _falseNegatives(0) {
+	truePositives(0), trueNegatives(0), falsePositives(0), falseNegatives(0) {
 	Mat mergedTargetsMask;
 	if (ImageUtils::mergeTargetMasks(targetMasks, mergedTargetsMask)) {
-		computeMasksSimilarity(votingMask, mergedTargetsMask, votingMaskThreshold, &_truePositives, &_trueNegatives, &_falsePositives, &_falseNegatives);
+		computeMasksSimilarity(votingMask, mergedTargetsMask, votingMaskThreshold, &truePositives, &trueNegatives, &falsePositives, &falseNegatives);
 
 		updateMeasures();
 	}
@@ -121,8 +121,8 @@ double DetectorEvaluationResult::computeAccuracy(size_t truePositives, size_t tr
 
 
 void DetectorEvaluationResult::updateMeasures() {
-	_precision = computePrecision(_truePositives, _falsePositives);
-	_recall = computeRecall(_truePositives, _falseNegatives);
-	_accuracy = computeAccuracy(_truePositives, _trueNegatives, _falsePositives, _falseNegatives);
+	precision = computePrecision(truePositives, falsePositives);
+	recall = computeRecall(truePositives, falseNegatives);
+	accuracy = computeAccuracy(truePositives, trueNegatives, falsePositives, falseNegatives);
 }
 

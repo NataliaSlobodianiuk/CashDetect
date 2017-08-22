@@ -20,6 +20,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgproc/imgproc_c.h"
 #include "opencv2/features2d/features2d.hpp"
+#include "opencv2/xfeatures2d.hpp"
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -27,7 +28,7 @@
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <ModelEstimator>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 class ModelEstimator {
 	public:
-		ModelEstimator(int _modelPoints, CvSize _modelSize, int _maxBasicSolutions);
+		ModelEstimator(int _modelPoints, cv::Size _modelSize, int _maxBasicSolutions);
 		virtual ~ModelEstimator();
 
 		virtual int runKernel(const CvMat* m1, const CvMat* m2, CvMat* model) = 0;
@@ -43,9 +44,9 @@ class ModelEstimator {
 		virtual bool getSubset(const CvMat* m1, const CvMat* m2, CvMat* ms1, CvMat* ms2, int maxAttempts = 1000);
 		virtual bool checkSubset(const CvMat* ms1, int count);
 
-		CvRNG rng;
+		cv::RNG rng;
 		int modelPoints;
-		CvSize modelSize;
+		cv::Size modelSize;
 		int maxBasicSolutions;
 		bool checkPartialSubsets;
 };

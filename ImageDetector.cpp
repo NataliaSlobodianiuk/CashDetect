@@ -1,17 +1,17 @@
 #include "ImageDetector.h"
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <ImageDetector>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-ImageDetector::ImageDetector(Ptr<FeatureDetector> featureDetector, Ptr<DescriptorExtractor> descriptorExtractor, Ptr<DescriptorMatcher> descriptorMatcher, Ptr<ImagePreprocessor> imagePreprocessor,
-	const string& configurationTags, const string& selectorTags, const vector<string>& referenceImagesDirectories,
-	bool useInliersGlobalMatch,
-	const string& referenceImagesListPath, const string& testImagesListPath) :
-	_featureDetector(featureDetector), _descriptorExtractor(descriptorExtractor), _descriptorMatcher(descriptorMatcher),
-	_imagePreprocessor(imagePreprocessor), _configurationTags(configurationTags), _selectorTags(selectorTags),
-	_referenceImagesDirectories(referenceImagesDirectories), _referenceImagesListPath(referenceImagesListPath), _testImagesListPath(testImagesListPath),
-	_contourAspectRatioRange(-1, -1), _contourCircularityRange(-1, -1) {
+ImageDetector::ImageDetector(Ptr<FeatureDetector> _featureDetector, Ptr<DescriptorExtractor> _descriptorExtractor, Ptr<DescriptorMatcher> _descriptorMatcher, Ptr<ImagePreprocessor> _imagePreprocessor,
+	const vector<string>& _referenceImagesDirectories,
+	bool _useInliersGlobalMatch,
+	const string& _referenceImagesListPath, const string& _testImagesListPath) :
+	featureDetector(_featureDetector), descriptorExtractor(_descriptorExtractor), descriptorMatcher(_descriptorMatcher),
+	imagePreprocessor(_imagePreprocessor),
+	referenceImagesDirectories(_referenceImagesDirectories), referenceImagesListPath(_referenceImagesListPath), testImagesListPath(_testImagesListPath),
+	contourAspectRatioRange(-1, -1), contourCircularityRange(-1, -1) {
 
-	setupTargetDB(referenceImagesListPath, useInliersGlobalMatch);
+	// setup DB of currency
+	setupTargetDB(referenceImagesListPath, _useInliersGlobalMatch);
 	setupTargetsShapesRanges();
 }
 
@@ -20,9 +20,10 @@ ImageDetector::~ImageDetector() {}
 
 
 bool ImageDetector::setupTargetDB(const string& referenceImagesListPath, bool useInliersGlobalMatch) {
-	_targetDetectors.clear();
+	targetDetectors.clear();
 
 	ifstream imgsList(referenceImagesListPath);
+
 	if (imgsList.is_open()) {
 		string configurationLine;
 		vector<string> configurations;
@@ -31,41 +32,43 @@ bool ImageDetector::setupTargetDB(const string& referenceImagesListPath, bool us
 		}
 		int numberOfFiles = configurations.size();
 
-
-		cout << "    -> Initializing recognition database with " << numberOfFiles << " reference images and with " << _referenceImagesDirectories.size() << " levels of detail..." << endl;
-		PerformanceTimer performanceTimer;
-		performanceTimer.start();
-
-		//#pragma omp parallel for schedule(dynamic)
+		// make some parallel code
+		#pragma omp parallel for schedule(dynamic)
 		for (int configIndex = 0; configIndex < numberOfFiles; ++configIndex) {
 			string filename;
 			size_t targetTag;
 			string separator;
-			Scalar color;
 			stringstream ss(configurations[configIndex]);
-			ss >> filename >> separator >> targetTag >> separator >> color[2] >> color[1] >> color[0];
+			ss >> filename >> separator >> targetTag >> separator;
 
-			TargetDetector targetDetector(_featureDetector, _descriptorExtractor, _descriptorMatcher, targetTag, color, useInliersGlobalMatch);
+			TargetDetector targetDetector(featureDetector, descriptorExtractor, descriptorMatcher, targetTag, useInliersGlobalMatch);
 
-			for (size_t i = 0; i < _referenceImagesDirectories.size(); ++i) {
-				string referenceImagesDirectory = _referenceImagesDirectories[i];
+			for (size_t i = 0; i < referenceImagesDirectories.size(); ++i) {
+				string referenceImagesDirectory = referenceImagesDirectories[i];
 				Mat targetImage;
 
+				// Create file path to image for DB
 				stringstream referenceImgePath;
 				referenceImgePath << REFERENCE_IMGAGES_DIRECTORY << referenceImagesDirectory << "/" << filename;
-				cout << "     => Adding reference image " << referenceImgePath.str() << endl;
-				if (_imagePreprocessor->loadAndPreprocessImage(referenceImgePath.str(), targetImage, CV_LOAD_IMAGE_GRAYSCALE, false)) {
+				
+				// Load image into targetImage
+				if (imagePreprocessor->loadAndPreprocessImage(referenceImgePath.str(), targetImage, CV_LOAD_IMAGE_GRAYSCALE, false)) {
 					string filenameWithoutExtension = ImageUtils::getFilenameWithoutExtension(filename);
+
+					// create filename for mask
 					stringstream maskFilename;
 					maskFilename << REFERENCE_IMGAGES_DIRECTORY << referenceImagesDirectory << "/" << filenameWithoutExtension << MASK_TOKEN << MASK_EXTENSION;
 
+					// load mask 
 					Mat targetROIs;
 					if (ImageUtils::loadBinaryMask(maskFilename.str(), targetROIs)) {
 						targetDetector.setupTargetRecognition(targetImage, targetROIs);
 
 						vector<KeyPoint>& targetKeypoints = targetDetector.getTargetKeypoints();
-						stringstream imageKeypointsFilename;
-						imageKeypointsFilename << REFERENCE_IMGAGES_ANALYSIS_DIRECTORY << filenameWithoutExtension << "_" << referenceImagesDirectory << _selectorTags << IMAGE_OUTPUT_EXTENSION;
+						
+						// writing results of keypoints detector into file
+						/*stringstream imageKeypointsFilename;
+						imageKeypointsFilename << REFERENCE_IMGAGES_ANALYSIS_DIRECTORY << filenameWithoutExtension << "_" << referenceImagesDirectory << selectorTags << IMAGE_OUTPUT_EXTENSION;
 						if (targetKeypoints.empty()) {
 							imwrite(imageKeypointsFilename.str(), targetImage);
 						}
@@ -73,18 +76,15 @@ bool ImageDetector::setupTargetDB(const string& referenceImagesListPath, bool us
 							Mat imageKeypoints;
 							cv::drawKeypoints(targetImage, targetKeypoints, imageKeypoints, TARGET_KEYPOINT_COLOR);
 							imwrite(imageKeypointsFilename.str(), imageKeypoints);
-						}
+						}*/
 					}
 				}
 			}
 
-			//#pragma omp critical
-			_targetDetectors.push_back(targetDetector);
+			#pragma omp critical
+			targetDetectors.push_back(targetDetector);
 		}
-
-		cout << "    -> Finished initialization of targets database in " << performanceTimer.getElapsedTimeFormated() << "\n" << endl;
-
-		return !_targetDetectors.empty();
+		return !targetDetectors.empty();
 	}
 	else {
 		return false;
@@ -107,23 +107,23 @@ void ImageDetector::setupTargetsShapesRanges(const string& maskPath) {
 			double contourCircularity = ImageUtils::computeContourCircularity(contours[i]);
 
 #pragma omp critical
-			if (_contourAspectRatioRange[0] == -1 || contourAspectRatio < _contourAspectRatioRange[0]) {
-				_contourAspectRatioRange[0] = contourAspectRatio;
+			if (contourAspectRatioRange[0] == -1 || contourAspectRatio < contourAspectRatioRange[0]) {
+				contourAspectRatioRange[0] = contourAspectRatio;
 			}
 
 #pragma omp critical
-			if (_contourAspectRatioRange[1] == -1 || contourAspectRatio > _contourAspectRatioRange[1]) {
-				_contourAspectRatioRange[1] = contourAspectRatio;
+			if (contourAspectRatioRange[1] == -1 || contourAspectRatio > contourAspectRatioRange[1]) {
+				contourAspectRatioRange[1] = contourAspectRatio;
 			}
 
 #pragma omp critical
-			if (_contourCircularityRange[0] == -1 || contourCircularity < _contourCircularityRange[0]) {
-				_contourCircularityRange[0] = contourCircularity;
+			if (contourCircularityRange[0] == -1 || contourCircularity < contourCircularityRange[0]) {
+				contourCircularityRange[0] = contourCircularity;
 			}
 
 #pragma omp critical
-			if (_contourCircularityRange[1] == -1 || contourCircularity > _contourCircularityRange[1]) {
-				_contourCircularityRange[1] = contourCircularity;
+			if (contourCircularityRange[1] == -1 || contourCircularity > contourCircularityRange[1]) {
+				contourCircularityRange[1] = contourCircularity;
 			}
 		}
 	}
@@ -135,29 +135,29 @@ Ptr< vector< Ptr<DetectorResult> > > ImageDetector::detectTargets(Mat& image, fl
 	Ptr< vector< Ptr<DetectorResult> > > detectorResults(new vector< Ptr<DetectorResult> >());
 
 	vector<KeyPoint> keypointsQueryImage;
-	_featureDetector->detect(image, keypointsQueryImage);
+	featureDetector->detect(image, keypointsQueryImage);
 	if (keypointsQueryImage.size() < 4) { return detectorResults; }
 
 	Mat descriptorsQueryImage;
-	_descriptorExtractor->compute(image, keypointsQueryImage, descriptorsQueryImage);
+	descriptorExtractor->compute(image, keypointsQueryImage, descriptorsQueryImage);
 
 	cv::drawKeypoints(image, keypointsQueryImage, image, NONTARGET_KEYPOINT_COLOR);
 
 	float bestMatch = 0;
 	Ptr<DetectorResult> bestDetectorResult;
 
-	int targetDetectorsSize = _targetDetectors.size();
+	int targetDetectorsSize = targetDetectors.size();
 	bool validDetection = true;
 	float reprojectionThreshold = image.cols * reprojectionThresholdPercentage;
 	//float reprojectionThreshold = 3.0;
 
 	do {
 		bestMatch = 0;
-
-		//#pragma omp parallel for schedule(dynamic)
+		// make some parallel loop
+		#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < targetDetectorsSize; ++i) {
-			_targetDetectors[i].updateCurrentLODIndex(image);
-			Ptr<DetectorResult> detectorResult = _targetDetectors[i].analyzeImage(keypointsQueryImage, descriptorsQueryImage, maxDistanceRatio, reprojectionThreshold, confidence, maxIters, minimumNumberInliers);
+			targetDetectors[i].updateCurrentLODIndex(image);
+			Ptr<DetectorResult> detectorResult = targetDetectors[i].analyzeImage(keypointsQueryImage, descriptorsQueryImage, maxDistanceRatio, reprojectionThreshold, confidence, maxIters, minimumNumberInliers);
 			if (detectorResult->getBestROIMatch() > minimumMatchAllowed) {
 				float contourArea = (float)cv::contourArea(detectorResult->getTargetContour());
 				float imageArea = (float)(image.cols * image.rows);
@@ -165,11 +165,11 @@ Ptr< vector< Ptr<DetectorResult> > > ImageDetector::detectTargets(Mat& image, fl
 
 				if (contourAreaPercentage > minimumTargetAreaPercentage) {
 					double contourAspectRatio = ImageUtils::computeContourAspectRatio(detectorResult->getTargetContour());
-					if (contourAspectRatio > _contourAspectRatioRange[0] && contourAspectRatio < _contourAspectRatioRange[1]) {
+					if (contourAspectRatio > contourAspectRatioRange[0] && contourAspectRatio < contourAspectRatioRange[1]) {
 						double contourCircularity = ImageUtils::computeContourCircularity(detectorResult->getTargetContour());
-						if (contourCircularity > _contourCircularityRange[0] && contourCircularity < _contourCircularityRange[1]) {
+						if (contourCircularity > contourCircularityRange[0] && contourCircularity < contourCircularityRange[1]) {
 							if (cv::isContourConvex(detectorResult->getTargetContour())) {
-								//#pragma omp critical
+								#pragma omp critical
 								{
 									if (detectorResult->getBestROIMatch() > bestMatch) {
 										bestMatch = detectorResult->getBestROIMatch();
@@ -202,9 +202,6 @@ vector<size_t> ImageDetector::detectTargetsAndOutputResults(Mat& image, const st
 	Ptr< vector< Ptr<DetectorResult> > > detectorResultsOut = detectTargets(image);
 	vector<size_t> results;
 
-	stringstream imageInliersOutputFilename;
-	imageInliersOutputFilename << TEST_OUTPUT_DIRECTORY << imageFilename << FILENAME_SEPARATOR << _configurationTags << FILENAME_SEPARATOR << INLIERS_MATCHES << FILENAME_SEPARATOR;
-
 	for (size_t i = 0; i < detectorResultsOut->size(); ++i) {
 		Ptr<DetectorResult> detectorResult = (*detectorResultsOut)[i];
 		results.push_back(detectorResult->getTargetValue());
@@ -222,8 +219,8 @@ vector<size_t> ImageDetector::detectTargetsAndOutputResults(Mat& image, const st
 			ImageUtils::correctBoundingBox(boundingBox, image.cols, image.rows);
 			GUIUtils::drawLabelInCenterOfROI(ss.str(), image, boundingBox);
 			GUIUtils::drawLabelInCenterOfROI(ss.str(), matchesInliers, boundingBox);
-			ImageUtils::drawContour(image, detectorResult->getTargetContour(), detectorResult->getContourColor());
-			ImageUtils::drawContour(matchesInliers, detectorResult->getTargetContour(), detectorResult->getContourColor());
+			ImageUtils::drawContour(image, detectorResult->getTargetContour(), cv::Scalar(0, 255, 0));
+			ImageUtils::drawContour(matchesInliers, detectorResult->getTargetContour(), cv::Scalar(0, 255, 0));
 		}
 		catch (...) {
 			std::cerr << "!!! Drawing outside image !!!" << endl;
@@ -236,10 +233,6 @@ vector<size_t> ImageDetector::detectTargetsAndOutputResults(Mat& image, const st
 			cv::imshow(windowName.str(), matchesInliers);
 			cv::waitKey(10);
 		}
-
-		stringstream imageOutputFilenameFull;
-		imageOutputFilenameFull << imageInliersOutputFilename.str() << i << IMAGE_OUTPUT_EXTENSION;
-		imwrite(imageOutputFilenameFull.str(), matchesInliers);
 	}
 
 	sort(results.begin(), results.end());
@@ -263,11 +256,6 @@ vector<size_t> ImageDetector::detectTargetsAndOutputResults(Mat& image, const st
 	globalResultSS << "Global result: " << globalResult << resultsSS.str();
 	Rect globalResultBoundingBox(0, 0, image.cols, image.rows);
 	GUIUtils::drawImageLabel(globalResultSS.str(), image, globalResultBoundingBox);
-
-	stringstream imageOutputFilename;
-	imageOutputFilename << TEST_OUTPUT_DIRECTORY << imageFilename << FILENAME_SEPARATOR << _configurationTags << IMAGE_OUTPUT_EXTENSION;
-	imwrite(imageOutputFilename.str(), image);
-
 	return results;
 }
 
@@ -277,15 +265,8 @@ DetectorEvaluationResult ImageDetector::evaluateDetector(const string& testImgsL
 	double globalRecall = 0;
 	double globalAccuracy = 0;
 	size_t numberTestImages = 0;
-
-	stringstream resultsFilename;
-	resultsFilename << TEST_OUTPUT_DIRECTORY << _configurationTags << FILENAME_SEPARATOR << RESULTS_FILE;
-	ofstream resutlsFile(resultsFilename.str());
-
 	ifstream imgsList(testImgsList);
-	if (resutlsFile.is_open() && imgsList.is_open()) {
-		resutlsFile << RESULTS_FILE_HEADER << "\n" << endl;
-
+	if (imgsList.is_open()) {
 		string filename;
 		vector<string> imageFilenames;
 		vector< vector<size_t> > expectedResults;
@@ -302,7 +283,7 @@ DetectorEvaluationResult ImageDetector::evaluateDetector(const string& testImgsL
 		PerformanceTimer globalPerformanceTimer;
 		globalPerformanceTimer.start();
 
-		//#pragma omp parallel for schedule(dynamic)
+		#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < numberOfTests; ++i) {
 			PerformanceTimer testPerformanceTimer;
 			testPerformanceTimer.start();
@@ -314,7 +295,7 @@ DetectorEvaluationResult ImageDetector::evaluateDetector(const string& testImgsL
 			DetectorEvaluationResult detectorEvaluationResult;
 			Mat imagePreprocessed;
 			cout << "\n    -> Evaluating image " << imageFilename << " (" << (i + 1) << "/" << numberOfTests << ")" << endl;
-			if (_imagePreprocessor->loadAndPreprocessImage(imageFilenameWithPath, imagePreprocessed, CV_LOAD_IMAGE_GRAYSCALE, false)) {
+			if (imagePreprocessor->loadAndPreprocessImage(imageFilenameWithPath, imagePreprocessed, CV_LOAD_IMAGE_GRAYSCALE, false)) {
 				vector<size_t> results = detectTargetsAndOutputResults(imagePreprocessed, imageFilename, false);
 
 				detectorEvaluationResult = DetectorEvaluationResult(results, expectedResults[i]);
@@ -325,10 +306,6 @@ DetectorEvaluationResult ImageDetector::evaluateDetector(const string& testImgsL
 				detectorEvaluationResultSS << PRECISION_TOKEN << ": " << detectorEvaluationResult.getPrecision() << " | " << RECALL_TOKEN << ": " << detectorEvaluationResult.getRecall() << " | " << ACCURACY_TOKEN << ": " << detectorEvaluationResult.getAccuracy();
 
 				++numberTestImages;
-
-				if (saveResults) {
-					resutlsFile << imageFilename << " -> " << detectorEvaluationResultSS.str() << endl;
-				}
 			}
 			cout << "    -> Evaluation of image " << imageFilename << " finished in " << testPerformanceTimer.getElapsedTimeFormated() << endl;
 			cout << "    -> " << detectorEvaluationResultSS.str() << endl;
@@ -340,9 +317,6 @@ DetectorEvaluationResult ImageDetector::evaluateDetector(const string& testImgsL
 
 		stringstream detectorEvaluationGloablResultSS;
 		detectorEvaluationGloablResultSS << GLOBAL_PRECISION_TOKEN << ": " << globalPrecision << " | " << GLOBAL_RECALL_TOKEN << ": " << globalRecall << " | " << GLOBAL_ACCURACY_TOKEN << ": " << globalAccuracy;
-
-		resutlsFile << "\n\n" << RESULTS_FILE_FOOTER << endl;
-		resutlsFile << " ==> " << detectorEvaluationGloablResultSS.str() << endl;
 		cout << "\n    -> Finished evaluation of detector in " << globalPerformanceTimer.getElapsedTimeFormated() << " || " << detectorEvaluationGloablResultSS.str() << "\n" << endl;
 	}
 

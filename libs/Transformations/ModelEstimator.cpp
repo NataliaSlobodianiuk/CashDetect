@@ -1,4 +1,4 @@
-#include "ModelEstimator.h"
+#include "modelestimator.h"
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <copyright notice> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -9,12 +9,12 @@
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <ModelEstimator>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-ModelEstimator::ModelEstimator(int _modelPoints, CvSize _modelSize, int _maxBasicSolutions) {
+ModelEstimator::ModelEstimator(int _modelPoints, cv::Size _modelSize, int _maxBasicSolutions) {
 	modelPoints = _modelPoints;
 	modelSize = _modelSize;
 	maxBasicSolutions = _maxBasicSolutions;
 	checkPartialSubsets = true;
-	rng = cvRNG(-1);
+	rng = cv::RNG(-1);
 }
 
 
@@ -22,7 +22,7 @@ ModelEstimator::~ModelEstimator() {}
 
 
 void ModelEstimator::setSeed(int64 seed) {
-	rng = cvRNG(seed);
+	rng = cv::RNG(seed);
 }
 
 
@@ -128,7 +128,14 @@ bool ModelEstimator::runRANSAC(const CvMat* m1, const CvMat* m2, CvMat* model, C
 }
 
 
-static CV_IMPLEMENT_QSORT(icvSortDistances, int, CV_LT)
+//static CV_IMPLEMENT_QSORT(int icvSortDistances, int, CV_LT)
+
+static void
+icvSortDistances(int *array, size_t total, int /*unused*/)
+{
+	std::sort(&array[0], &array[total]);
+}
+
 bool ModelEstimator::runLMeDS(const CvMat* m1, const CvMat* m2, CvMat* model, CvMat* mask, double confidence, int maxIters) {
 	const double outlierRatio = 0.45;
 	bool result = false;
@@ -216,7 +223,7 @@ bool ModelEstimator::getSubset(const CvMat* m1, const CvMat* m2, CvMat* ms1, CvM
 
 	for (; iters < maxAttempts; iters++) {
 		for (i = 0; i < modelPoints && iters < maxAttempts;) {
-			idx[i] = idx_i = cvRandInt(&rng) % count;
+			idx[i] = idx_i = rng.uniform(0, count);
 			for (j = 0; j < i; j++)
 			if (idx_i == idx[j])
 				break;

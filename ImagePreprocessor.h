@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <iostream>
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -22,10 +23,10 @@ using cv::imshow;
 
 class ImagePreprocessor {
 public:
-	ImagePreprocessor(int claehClipLimit = 2, int claehTileXSize = 4, int claehTileYSize = 4,
-		int bilateralFilterDistance = 8, int bilateralFilterSigmaColor = 16, int bilateralFilterSigmaSpace = 12,
-		int contrastMultipliedBy10 = 9, int brightnessMultipliedBy10 = 24);
-	virtual ~ImagePreprocessor();
+	ImagePreprocessor(int _claehClipLimit = 2, int _claehTileXSize = 4, int _claehTileYSize = 4,
+		int _bilateralFilterDistance = 8, int _bilateralFilterSigmaColor = 16, int _bilateralFilterSigmaSpace = 12,
+		int _contrastMultipliedBy10 = 9, int _brightnessMultipliedBy10 = 24);
+	~ImagePreprocessor();
 
 
 	bool loadAndPreprocessImage(const string& filename, Mat& imageLoadedOut, int loadFlags = CV_LOAD_IMAGE_COLOR, bool useCVHighGUI = false);
@@ -48,43 +49,44 @@ public:
 	void histogramEqualization(Mat& image, bool useCLAHE = true, bool useCVHighGUI = true);
 
 	// Getters and setters
-	int getClaehClipLimit() const { return _claehClipLimit; }
-	int* getClaehClipLimitPtr() { return &_claehClipLimit; }
-	void setClaehClipLimit(int val) { _claehClipLimit = val; }
-	int getClaehTileXSize() const { return _claehTileXSize; }
-	int* getClaehTileXSizePtr() { return &_claehTileXSize; }
-	void ClaehTileXSize(int val) { _claehTileXSize = val; }
-	int getClaehTileYSize() const { return _claehTileYSize; }
-	int* getClaehTileYSizePtr() { return &_claehTileYSize; }
-	void setClaehTileYSize(int val) { _claehTileYSize = val; }
+	int getClaehClipLimit() const { return claehClipLimit; }
+	int* getClaehClipLimitPtr() { return &claehClipLimit; }
+	void setClaehClipLimit(int val) { claehClipLimit = val; }
+	int getClaehTileXSize() const { return claehTileXSize; }
+	int* getClaehTileXSizePtr() { return &claehTileXSize; }
+	void ClaehTileXSize(int val) { claehTileXSize = val; }
+	int getClaehTileYSize() const { return claehTileYSize; }
+	int* getClaehTileYSizePtr() { return &claehTileYSize; }
+	void setClaehTileYSize(int val) { claehTileYSize = val; }
 
-	int getBilateralFilterDistance() const { return _bilateralFilterDistance; }
-	int* getBilateralFilterDistancePtr() { return &_bilateralFilterDistance; }
-	void setBilateralFilterDistance(int val) { _bilateralFilterDistance = val; }
-	int getBilateralFilterSigmaColor() const { return _bilateralFilterSigmaColor; }
-	int* getBilateralFilterSigmaColorPtr() { return &_bilateralFilterSigmaColor; }
-	void setBilateralFilterSigmaColor(int val) { _bilateralFilterSigmaColor = val; }
-	int getBilateralFilterSigmaSpace() const { return _bilateralFilterSigmaSpace; }
-	int* getBilateralFilterSigmaSpacePtr() { return &_bilateralFilterSigmaSpace; }
-	void setBilateralFilterSigmaSpace(int val) { _bilateralFilterSigmaSpace = val; }
+	int getBilateralFilterDistance() const { return bilateralFilterDistance; }
+	int* getBilateralFilterDistancePtr() { return &bilateralFilterDistance; }
+	void setBilateralFilterDistance(int val) { bilateralFilterDistance = val; }
+	int getBilateralFilterSigmaColor() const { return bilateralFilterSigmaColor; }
+	int* getBilateralFilterSigmaColorPtr() { return &bilateralFilterSigmaColor; }
+	void setBilateralFilterSigmaColor(int val) { bilateralFilterSigmaColor = val; }
+	int getBilateralFilterSigmaSpace() const { return bilateralFilterSigmaSpace; }
+	int* getBilateralFilterSigmaSpacePtr() { return &bilateralFilterSigmaSpace; }
+	void setBilateralFilterSigmaSpace(int val) { bilateralFilterSigmaSpace = val; }
 
-	int getContrast() const { return _contrast; }
-	int* getContrastPtr() { return &_contrast; }
-	void setContrast(int val) { _contrast = val; }
-	int getBrightness() const { return _brightness; }
-	int* getBrightnessPtr() { return &_brightness; }
-	void setBrightness(int val) { _brightness = val; }
+	int getContrast() const { return contrast; }
+	int* getContrastPtr() { return &contrast; }
+	void setContrast(int val) { contrast = val;
+	}
+	int getBrightness() const { return brightness; }
+	int* getBrightnessPtr() { return &brightness; }
+	void setBrightness(int val) { brightness = val; }
 	
 private:
-	int _claehClipLimit;
-	int _claehTileXSize;
-	int _claehTileYSize;
+	int claehClipLimit;
+	int claehTileXSize;
+	int claehTileYSize;
 
-	int _bilateralFilterDistance;
-	int _bilateralFilterSigmaColor;
-	int _bilateralFilterSigmaSpace;
+	int bilateralFilterDistance;
+	int bilateralFilterSigmaColor;
+	int bilateralFilterSigmaSpace;
 
-	int _contrast;
-	int _brightness;
+	int contrast;
+	int brightness;
 };
 

@@ -1,7 +1,4 @@
 #pragma once
-
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // std includes
 #include <string>
 #include <sstream>
@@ -20,7 +17,7 @@
 #include "ImagePreprocessor.h"
 #include "ImageDetector.h"
 #include "GUI/GUIUtils.h"
-
+#include "CLI.h"
 // namespace specific imports to avoid namespace pollution
 using std::string;
 using std::stringstream;
@@ -48,21 +45,17 @@ using cv::resizeWindow;
 using cv::circle;
 using cv::ellipse;
 using cv::rectangle;
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <Image analysis>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-/// Image analysis class that detects speed limits signs and recognizes the speed limit number
+// Image analysis class that detects speed limits signs and recognizes the speed limit number
 class ImageAnalysis {
 public:
 
-	/// Constructor with initialization of parameters with default value		 		 
+	// Constructor with initialization of parameters with default value		 		 
 	ImageAnalysis(Ptr<ImagePreprocessor> imagePreprocessor, Ptr<ImageDetector> imageDetector);
 
-	/// ImageAnalysis destructor that performs cleanup of OpenCV HighGUI windows (in case they are used)		 
-	virtual ~ImageAnalysis();
+	// ImageAnalysis destructor that performs cleanup of OpenCV HighGUI windows (in case they are used)		 
+	~ImageAnalysis();
 
 
 	/*!
@@ -71,7 +64,7 @@ public:
 	* \param useCVHighGUI Optional parameter specifying if the results and the intermediate processing should be displayed using OpenCV HighGUI
 	* \return true if image was successfully processed
 	*/
-	bool processImage(string filename, bool useCVHighGUI = true);
+	bool processImage(string filename, bool useCVHighGUI = false);
 
 
 	/*!
@@ -80,7 +73,7 @@ public:
 	* \param useCVHighGUI Optional parameter specifying if the results and the intermediate processing should be displayed using OpenCV HighGUI
 	* \return true if image was successfully processed
 	*/
-	bool processImage(Mat& image, bool useCVHighGUI = true);
+	bool processImage(Mat& image, bool useCVHighGUI = false);
 
 
 	/*!
@@ -90,32 +83,7 @@ public:
 	bool updateImage();
 
 
-	/*!
-	* \brief Processes a video from a file, analyzing the presence of speed limit signs
-	* \param path Full path to video
-	* \param useCVHighGUI Optional parameter specifying if the results and the intermediate processing should be displayed using OpenCV HighGUI
-	* \return True if processing finished successfully
-	*/
-	bool processVideo(string path, bool useCVHighGUI = true);
-
-	/*!
-	* \brief Processes a video from a camera, analyzing the presence of speed limit signs
-	* \param cameraDeviceNumber Camera device number
-	* \param useCVHighGUI Optional parameter specifying if the results and the intermediate processing should be displayed using OpenCV HighGUI
-	* \return True if processing finished successfully
-	*/
-	bool processVideo(int cameraDeviceNumber, bool useCVHighGUI = true);
-
-
-	/*!
-	* \brief Processes a video from a VideoCapture source, analyzing the presence of speed limit signs
-	* \param useCVHighGUI Optional parameter specifying if the results and the intermediate processing should be displayed using OpenCV HighGUI
-	* \return True if processing finished successfully
-	*/
-	bool processVideo(VideoCapture videoCapture, bool useCVHighGUI = true);
-
-
-	/// brief Setups the HighGUI window were the original image is going to be drawn		 		 
+	// brief Setups the HighGUI window were the original image is going to be drawn		 		 
 	void setupMainWindow();
 
 
@@ -123,35 +91,27 @@ public:
 	* \brief Setups the windows were the results will be presented
 	* \param optionsOneWindow Flag to indicate to group the track bars in one window
 	*/
+
+
 	void setupResultsWindows(bool optionsOneWindow = false);
-
-
-	// ------------------------------------------------------------------------------  <gets | sets> -------------------------------------------------------------------------------
-	int getScreenWidth() const { return _screenWidth; }
-	void setScreenWidth(int val) { _screenWidth = val; }
-
-	int getScreenHeight() const { return _screenHeight; }
-	void setScreenHeight(int val) { _screenHeight = val; }
-
-	bool getOptionsOneWindow() const { return _optionsOneWindow; }
-	void setOptionsOneWindow(bool val) { _optionsOneWindow = val; }
-	// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
+	void setScreenWidth(int val) { screenWidth = val; }
+	void setScreenHeight(int val) { screenHeight = val; }
+	void setOptionsOneWindow(bool val) { optionsOneWindow = val; }
 
 private:
-	Mat _originalImage;
-	Mat _preprocessedImage;
-	Mat _processedImage;
-	bool _useCVHiGUI;
-	bool _windowsInitialized;
-	bool _optionsOneWindow;
+	Mat originalImage;
+	Mat preprocessedImage;
+	Mat processedImage;
+	bool useCVHiGUI;
+	bool windowsInitialized;
+	bool optionsOneWindow;
 
-	int _frameRate;
-	int _screenWidth;
-	int _screenHeight;
+	int screenWidth;
+	int screenHeight;
 
-	Ptr<ImagePreprocessor> _imagePreprocessor;
-	Ptr<ImageDetector> _imageDetector;
+	Ptr<ImagePreprocessor> imagePreprocessor;
+	Ptr<ImageDetector> imageDetector;
 
-	string _filename;
+	string filename;
 };
 

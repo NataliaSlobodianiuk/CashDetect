@@ -1,12 +1,12 @@
 #include "ImagePreprocessor.h"
 
 
-ImagePreprocessor::ImagePreprocessor(int claehClipLimit, int claehTileXSize, int claehTileYSize,
-	int bilateralFilterDistance, int bilateralFilterSigmaColor, int bilateralFilterSigmaSpace,
-	int contrastMultipliedBy10, int brightnessMultipliedBy10) :
-	_claehClipLimit(claehClipLimit), _claehTileXSize(claehTileXSize), _claehTileYSize(claehTileYSize),
-	_bilateralFilterDistance(bilateralFilterDistance), _bilateralFilterSigmaColor(bilateralFilterSigmaColor), _bilateralFilterSigmaSpace(bilateralFilterSigmaSpace),
-	_contrast(contrastMultipliedBy10), _brightness(brightnessMultipliedBy10)
+ImagePreprocessor::ImagePreprocessor(int _claehClipLimit, int _claehTileXSize, int _claehTileYSize,
+	int _bilateralFilterDistance, int _bilateralFilterSigmaColor, int _bilateralFilterSigmaSpace,
+	int _contrastMultipliedBy10, int _brightnessMultipliedBy10) :
+	claehClipLimit(_claehClipLimit), claehTileXSize(_claehTileXSize), claehTileYSize(_claehTileYSize),
+	bilateralFilterDistance(_bilateralFilterDistance), bilateralFilterSigmaColor(_bilateralFilterSigmaColor), bilateralFilterSigmaSpace(_bilateralFilterSigmaSpace),
+	contrast(_contrastMultipliedBy10), brightness(_brightnessMultipliedBy10)
 {}
 
 ImagePreprocessor::~ImagePreprocessor() {}
@@ -15,6 +15,7 @@ ImagePreprocessor::~ImagePreprocessor() {}
 bool ImagePreprocessor::loadAndPreprocessImage(const string& filename, Mat& imageLoadedOut, int loadFlags, bool useCVHighGUI) {
 	if (filename != "") {
 		try {
+			//std::cout << filename << std::endl;
 			imageLoadedOut = cv::imread(filename, loadFlags);
 			if (!imageLoadedOut.data) { return false; }
 			preprocessImage(imageLoadedOut, useCVHighGUI);
@@ -31,25 +32,26 @@ bool ImagePreprocessor::loadAndPreprocessImage(const string& filename, Mat& imag
 
 void ImagePreprocessor::preprocessImage(Mat& image, bool useCVHighGUI) {
 	// remove noise with bilateral filter
-	cv::bilateralFilter(image.clone(), image, _bilateralFilterDistance, _bilateralFilterSigmaColor, _bilateralFilterSigmaSpace);
-	if (useCVHighGUI) {
+	cv::bilateralFilter(image.clone(), image, bilateralFilterDistance, bilateralFilterSigmaColor, bilateralFilterSigmaSpace);
+	/*if (useCVHighGUI) {
 		imshow(WINDOW_NAME_BILATERAL_FILTER, image);
-	}
+	}*/
 
 	// histogram equalization to improve color segmentation
 	//histogramEqualization(image.clone(), false, useCVHighGUI);
 	histogramEqualization(image, true, useCVHighGUI);
 
 	// increase contrast and brightness
-	image.convertTo(image, -1, (double)_contrast / 10.0, (double)_brightness / 10.0);
+	image.convertTo(image, -1, (double)contrast / 10.0, (double)brightness / 10.0);
 
-	cv::bilateralFilter(image.clone(), image, _bilateralFilterDistance, _bilateralFilterSigmaColor, _bilateralFilterSigmaSpace);
-	if (useCVHighGUI) {
-		imshow(WINDOW_NAME_CONTRAST_AND_BRIGHTNESS, image);
-	}
+	cv::bilateralFilter(image.clone(), image, bilateralFilterDistance, bilateralFilterSigmaColor, bilateralFilterSigmaSpace);
+	/*if (useCVHighGUI) {
+		//imshow(WINDOW_NAME_CONTRAST_AND_BRIGHTNESS, image);
+	}*/
 }
 
 
+// apply histogramEqualization for better color segmentation using CLAHE or equalizeHist
 void ImagePreprocessor::histogramEqualization(Mat& image, bool useCLAHE, bool useCVHighGUI) {
 	vector<Mat> channels;
 	if (image.channels() > 1) {
@@ -58,7 +60,7 @@ void ImagePreprocessor::histogramEqualization(Mat& image, bool useCLAHE, bool us
 	}
 
 	if (useCLAHE) {
-		cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE((_claehClipLimit < 1 ? 1 : _claehClipLimit), Size((_claehTileXSize < 1 ? 1 : _claehTileXSize), (_claehTileYSize < 1 ? 1 : _claehTileYSize)));
+		cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE((claehClipLimit < 1 ? 1 : claehClipLimit), Size((claehTileXSize < 1 ? 1 : claehTileXSize), (claehTileYSize < 1 ? 1 : claehTileYSize)));
 		if (image.channels() > 1) {
 			clahe->apply(channels[0], channels[0]);
 		}
@@ -75,6 +77,7 @@ void ImagePreprocessor::histogramEqualization(Mat& image, bool useCLAHE, bool us
 		cvtColor(image, image, CV_YCrCb2BGR);
 	}
 
+	/*
 	if (useCVHighGUI) {
 		if (useCLAHE) {
 			imshow(WINDOW_NAME_HISTOGRAM_EQUALIZATION_CLAHE, image);
@@ -82,5 +85,5 @@ void ImagePreprocessor::histogramEqualization(Mat& image, bool useCLAHE, bool us
 		else {
 			imshow(WINDOW_NAME_HISTOGRAM_EQUALIZATION, image);
 		}
-	}
+	}*/
 }

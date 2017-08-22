@@ -1,5 +1,4 @@
 #pragma once
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <constants definitions> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #define WINDOW_NAME_MAIN "0. Original image"
 #define WINDOW_NAME_OPTIONS "Parameterization"
 #define WINDOW_NAME_BILATERAL_FILTER "1. Bilateral filter"
@@ -46,4 +45,3 @@
 #define IMAGE_OUTPUT_EXTENSION ".jpg"
 
 #define FILENAME_SEPARATOR "__"
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </constants definitions> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

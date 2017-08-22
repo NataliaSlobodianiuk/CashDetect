@@ -8,7 +8,6 @@
 // project includes
 #include "Configs.h"
 
-
 // namespace specific imports to avoid namespace pollution
 using std::vector;
 
@@ -22,40 +21,38 @@ using cv::KeyPoint;
 class DetectorResult {
 public:
 	DetectorResult();
-	DetectorResult(size_t targetValue, const vector<Point>& targetContour, const Scalar& contourColor, float bestROIMatch,
-		const Mat& referenceImage, const vector<KeyPoint>& referenceImageKeypoints, const vector<KeyPoint>& keypointsQueryImage,
-		const vector<DMatch>& matches, const vector<DMatch>& inliers, const vector<unsigned char>& inliersMatchesMask, const Mat& homography);
+	DetectorResult(size_t _targetValue, const vector<Point>& _targetContour, float _bestROIMatch,
+		const Mat& _referenceImage, const vector<KeyPoint>& _referenceImageKeypoints, const vector<KeyPoint>& _keypointsQueryImage,
+		const vector<DMatch>& _matches, const vector<DMatch>& _inliers, const vector<unsigned char>& _inliersMatchesMask, const Mat& _homography);
 
-	virtual ~DetectorResult();
+	~DetectorResult();
 
-	size_t& getTargetValue() { return _targetValue; }
+	size_t& getTargetValue() { return targetValue; }
 	vector<Point>& getTargetContour();
-	Scalar& getContourColor() { return _contourColor; }
-	float& getBestROIMatch() { return _bestROIMatch; }
-	Mat& getReferenceImage() { return _referenceImage; }
-	vector<KeyPoint>& getKeypointsQueryImage() { return _keypointsQueryImage; }
-	vector<DMatch>& getMatches() { return _matches; }
-	vector<DMatch>& getInliers() { return _inliers; }
+	float& getBestROIMatch() { return bestROIMatch; }
+	Mat& getReferenceImage() { return referenceImage; }
+	vector<KeyPoint>& getKeypointsQueryImage() { return keypointsQueryImage; }
+	vector<DMatch>& getMatches() { return matches; }
+	vector<DMatch>& getInliers() { return inliers; }
 	vector<KeyPoint>& getInliersKeypoints();
 	Mat getInliersMatches(Mat& queryImage);
-	vector<unsigned char>& getInliersMatchesMask() { return _inliersMatchesMask; }
-	Mat& getHomography() { return _homography; }
+	vector<unsigned char>& getInliersMatchesMask() { return inliersMatchesMask; }
+	Mat& getHomography() { return homography; }
 
-protected:
-	size_t _targetValue;
-	vector<Point> _targetContour;
-	Scalar _contourColor;
-	float _bestROIMatch;
+private:
+	size_t targetValue;
+	vector<Point> targetContour;
+	float bestROIMatch;
 
-	Mat _referenceImage;
-	vector<KeyPoint> _referenceImageKeypoints;
-	vector<KeyPoint> _keypointsQueryImage;
-	vector<DMatch> _matches;
-	vector<DMatch> _inliers;
-	vector<KeyPoint> _inliersKeyPoints;
-	vector<unsigned char> _inliersMatchesMask;
+	Mat referenceImage;
+	vector<KeyPoint> referenceImageKeypoints;
+	vector<KeyPoint> keypointsQueryImage;
+	vector<DMatch> matches;
+	vector<DMatch> inliers;
+	vector<KeyPoint> inliersKeyPoints;
+	vector<unsigned char> inliersMatchesMask;
 
-	Mat _homography;
+	Mat homography;
 };
 
 

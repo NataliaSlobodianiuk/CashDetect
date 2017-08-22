@@ -235,7 +235,9 @@ bool ImageUtils::refineMatchesWithHomography(const vector<KeyPoint>& queryKeypoi
 	// Find homography matrix and get inliers mask
 	inliersMaskOut.clear();
 	inliersMaskOut.resize(srcPoints.size(), 0);
-	homographyOut = cv::findHomography(srcPoints, dstPoints, CV_FM_RANSAC, reprojectionThreshold, inliersMaskOut, maxIters, confidence);
+
+	// Better solution for findHomography
+	homographyOut = Transformations::findHomography(srcPoints, dstPoints, CV_FM_RANSAC, reprojectionThreshold, inliersMaskOut, confidence, maxIters);
 
 
 	for (size_t i = 0; i < inliersMaskOut.size(); ++i) {
