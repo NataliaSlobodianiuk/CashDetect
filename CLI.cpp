@@ -28,6 +28,7 @@ void CLI::startInteractiveCLI() {
 				userOption = getUserOption();
 				if (userOption == 1) {
 					setupImageRecognition();
+
 				}
 				else if (userOption == 2) {
 					imageDetector->evaluateDetector(TEST_IMGAGES_LIST);
@@ -85,83 +86,20 @@ int CLI::getUserOption() {
 
 
 void CLI::setupImageRecognition() {
-	cout << "\n\n ## Image recognition setup:\n" << endl;
-	int featureDetectorSelection = selectFeatureDetector();
-	cout << "\n\n\n";
-	int descriptorExtractorSelection = selectDescriptorExtractor();
-	cout << "\n\n\n";
-	int descriptorMatcherSelection = selectDescriptorMatcher();
-	cout << "\n\n\n";
-
-	Ptr<FeatureDetector> featureDetector;
-	Ptr<DescriptorExtractor> descriptorExtractor;
-	Ptr<DescriptorMatcher> descriptorMatcher;
-
-	switch (featureDetectorSelection) {
-	case 1: { featureDetector = cv::xfeatures2d::SiftFeatureDetector::create();			 
-			break; }
-	case 2: { featureDetector = cv::xfeatures2d::SURF::create(400);		 
-		break; }
-	case 3: { featureDetector = cv::GFTTDetector::create();	
-		break; }
-	case 4: { featureDetector = cv::FastFeatureDetector::create();			
-		break; }
-	case 5: { featureDetector = cv::ORB::create();			 
-		break; }
-	case 6: { featureDetector = cv::BRISK::create();						
-		break; }
-	case 7: { featureDetector = cv::xfeatures2d::StarDetector::create();			
-		break; }
-	case 8: { featureDetector = cv::MSER::create();			 
-		break; }
-	default: break;
-	}
-
-	switch (descriptorExtractorSelection) {
-	case 1: { descriptorExtractor = cv::xfeatures2d::SiftDescriptorExtractor::create();	
-		break; }
-	case 2: { descriptorExtractor = cv::xfeatures2d::SurfDescriptorExtractor::create();	
-		break; }
-	case 3: { descriptorExtractor = cv::xfeatures2d::FREAK::create();					
-		break; }
-	case 4: { descriptorExtractor = cv::xfeatures2d::BriefDescriptorExtractor::create();	 
-		break; }
-	case 5: { descriptorExtractor = cv::ORB::create();	
-			break; }
-	case 6: { descriptorExtractor = cv::BRISK::create();					 
-				break; }
-	default: break;
-	}
-
-	int bfNormType;
-	Ptr<cv::flann::IndexParams> flannIndexParams/* = new cv::flann::AutotunedIndexParams()*/;
-	if (descriptorExtractorSelection > 2) { // binary descriptors		
-		bfNormType = cv::NORM_HAMMING;
-		//flannIndexParams = new cv::flann::HierarchicalClusteringIndexParams();
-		flannIndexParams = new cv::flann::LshIndexParams(12, 20, 2);
-	}
-	else { // float descriptors		
-		bfNormType = cv::NORM_L2;
-		flannIndexParams = new cv::flann::KDTreeIndexParams();
-	}
-
-	switch (descriptorMatcherSelection) {
-		case 1: { descriptorMatcher = new cv::FlannBasedMatcher(flannIndexParams);	
-				break; }
-	case 2: { descriptorMatcher = new cv::BFMatcher(bfNormType, false);			
-			break; }
-	default: break;
-	}
+	int bfNormType = cv::NORM_L2;
+	Ptr<cv::xfeatures2d::SiftFeatureDetector> featureDetector = cv::xfeatures2d::SiftFeatureDetector::create();
+	Ptr<cv::xfeatures2d::SiftDescriptorExtractor> descriptorExtractor = cv::xfeatures2d::SiftDescriptorExtractor::create();
+	Ptr<cv::BFMatcher> descriptorMatcher  = new cv::BFMatcher(bfNormType, false);
 
 	// set DB for recognition 
-	// in this case low quality DB is used: 512 X 270
+	// in this case all quality DB is used: 256 * 137; 512 * 270; 772 * 405
 	vector<string> imagesDBLevelOfDetail;
 	imagesDBLevelOfDetail.push_back(REFERENCE_IMGAGES_DIRECTORY_VERY_LOW);
 	imagesDBLevelOfDetail.push_back(REFERENCE_IMGAGES_DIRECTORY_LOW);
 	imagesDBLevelOfDetail.push_back(REFERENCE_IMGAGES_DIRECTORY_MEDIUM);
 
 	// set match
-	// in this case localMatch is used 
+	// in this case globalMatch is used 
 	// matcher use masks with important currency regions 
 	bool inliersSelectionMethodFlagToUseGlobalMatch = true;	
 
@@ -169,40 +107,4 @@ void CLI::setupImageRecognition() {
 	imageDetector = new ImageDetector(featureDetector, descriptorExtractor, descriptorMatcher, imagePreprocessor, imagesDBLevelOfDetail, inliersSelectionMethodFlagToUseGlobalMatch);
 }
 
-
-int CLI::selectFeatureDetector() {
-	cout << "  => Select feature detector:\n";
-	cout << "    1 - SIFT\n";
-	cout << "    2 - SURF\n";
-	cout << "    3 - GFTT\n";
-	cout << "    4 - FAST\n";
-	cout << "    5 - ORB\n";
-	cout << "    6 - BRISK\n";
-	cout << "    7 - STAR\n";
-	cout << "    8 - MSER\n";
-
-	return ConsoleInput::getInstance()->getIntCin("\n >>> Option [1, 7]: ", "Select one of the options above!", 1, 9);
-}
-
-
-int CLI::selectDescriptorExtractor() {
-	cout << "  => Select descriptor extractor:\n";
-	cout << "    1 - SIFT\n";
-	cout << "    2 - SURF\n";
-	cout << "    3 - FREAK\n";
-	cout << "    4 - BRIEF\n";
-	cout << "    5 - ORB\n";
-	cout << "    6 - BRISK\n";
-
-	return ConsoleInput::getInstance()->getIntCin("\n >>> Option [1, 6]: ", "Select one of the options above!", 1, 7);
-}
-
-
-int CLI::selectDescriptorMatcher() {
-	cout << "  => Select descriptor matcher:\n";
-	cout << "    1 - FlannBasedMatcher\n";
-	cout << "    2 - BFMatcher\n";
-
-	return ConsoleInput::getInstance()->getIntCin("\n >>> Option [1, 2]: ", "Select one of the options above!", 1, 3);
-}
 

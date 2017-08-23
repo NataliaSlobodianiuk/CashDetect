@@ -22,17 +22,17 @@
 #define ESC_KEYCODE 27
 
 #define IMAGE_TOKEN ".jpg"
-#define MASK_TOKEN "_mask"
-#define MASK_EXTENSION ".png"
+#define MASK_TOKEN "-mask"
+#define MASK_EXTENSION ".jpg"
 
 #define REFERENCE_IMGAGES_DIRECTORY "imgs/"
-#define REFERENCE_IMGAGES_DIRECTORY_VERY_LOW "currencyDB_veryLowResolution"
-#define REFERENCE_IMGAGES_DIRECTORY_LOW "currencyDB_lowResolution"
-#define REFERENCE_IMGAGES_DIRECTORY_MEDIUM "currencyDB_mediumResolution"
+#define REFERENCE_IMGAGES_DIRECTORY_VERY_LOW "currencyDB_veryLowResolution_p"
+#define REFERENCE_IMGAGES_DIRECTORY_LOW "currencyDB_lowResolution_p"
+#define REFERENCE_IMGAGES_DIRECTORY_MEDIUM "currencyDB_mediumResolution_p"
 #define TEST_IMGAGES_DIRECTORY "imgs/testDB/"
-#define REFERENCE_IMGAGES_LIST "imgs/listCurrencyDB.txt"
+#define REFERENCE_IMGAGES_LIST "imgs/listCurrencyDB_u.txt"
 #define REFERENCE_IMGAGES_ANALYSIS_DIRECTORY "testResults/currencyDBAnalysis/"
-#define TEST_IMGAGES_LIST "imgs/listTestDB.txt"
+#define TEST_IMGAGES_LIST "imgs/listTestDB_u.txt"
 
 #define TEST_OUTPUT_DIRECTORY "testResults/"
 

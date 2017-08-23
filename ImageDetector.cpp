@@ -39,7 +39,7 @@ bool ImageDetector::setupTargetDB(const string& referenceImagesListPath, bool us
 			size_t targetTag;
 			string separator;
 			stringstream ss(configurations[configIndex]);
-			ss >> filename >> separator >> targetTag >> separator;
+			ss >> filename >> separator >> targetTag;
 
 			TargetDetector targetDetector(featureDetector, descriptorExtractor, descriptorMatcher, targetTag, useInliersGlobalMatch);
 
@@ -148,8 +148,8 @@ Ptr< vector< Ptr<DetectorResult> > > ImageDetector::detectTargets(Mat& image, fl
 
 	int targetDetectorsSize = targetDetectors.size();
 	bool validDetection = true;
-	float reprojectionThreshold = image.cols * reprojectionThresholdPercentage;
-	//float reprojectionThreshold = 3.0;
+	//float reprojectionThreshold = image.cols * reprojectionThresholdPercentage;
+	float reprojectionThreshold = 3.0;
 
 	do {
 		bestMatch = 0;

@@ -25,7 +25,8 @@ class ImagePreprocessor {
 public:
 	ImagePreprocessor(int _claehClipLimit = 2, int _claehTileXSize = 4, int _claehTileYSize = 4,
 		int _bilateralFilterDistance = 8, int _bilateralFilterSigmaColor = 16, int _bilateralFilterSigmaSpace = 12,
-		int _contrastMultipliedBy10 = 9, int _brightnessMultipliedBy10 = 24);
+		int _contrastMultipliedBy10 = 9, int _brightnessMultipliedBy10 = 24, int _GAUSSIAN_SMOOTH_FILTER_SIZE = 19,
+		int _ADAPTIVE_THRESH_BLOCK_SIZE = 19, int ADAPTIVE_THRESH_WEIGHT = 5);
 	~ImagePreprocessor();
 
 
@@ -47,6 +48,20 @@ public:
 	* \return
 	*/
 	void histogramEqualization(Mat& image, bool useCLAHE = true, bool useCVHighGUI = true);
+
+	/*!
+	* \method for extracting saturation value for better preprocessing
+	* \get BGR image
+	* \return grayscaled image
+	*/
+	cv::Mat extractValue(cv::Mat &imgOriginal);
+
+	/*!
+	 *\method for maximazing contrast in image
+	 *\get grayscaled image
+	 *\return grayscaled image
+	*/
+	cv::Mat maximizeContrast(cv::Mat &imgGrayscale);
 
 	// Getters and setters
 	int getClaehClipLimit() const { return claehClipLimit; }
@@ -88,5 +103,10 @@ private:
 
 	int contrast;
 	int brightness;
+
+	// For preprocessing
+	int GAUSSIAN_SMOOTH_FILTER_SIZE;
+	int ADAPTIVE_THRESH_BLOCK_SIZE;
+	int ADAPTIVE_THRESH_WEIGHT;
 };
 

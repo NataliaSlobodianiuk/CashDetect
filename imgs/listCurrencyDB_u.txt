@@ -1,0 +1,10 @@
+1-gryvnia-back.jpg		|   1 | 0 255 2551-gryvnia-front.jpg	|   1 | 0 255 2552-gryvnia-back.jpg		|   2 | 0 255 0
+2-gryvnia-front.jpg	|   2 | 0 255 05-gryvnia-back.jpg		|  5 | 0 255 255
+5-gryvnia-front.jpg		|  5 | 0 255 0
+10-gryvnia-back.jpg		|  10 | 0 255 255
+10-gryvnia-front.jpg		|  10 | 0 255 0
+20-gryvnia-back.jpg		|  20 | 0 255 25520-gryvnia-front.jpg		|  20 | 0 255 0
+50-gryvnia-back.jpg		| 50 | 0 255 255
+50-gryvnia-front.jpg		| 50 | 0 255 0100-gryvnia-back.jpg		| 100 | 0 255 255
+100-gryvnia-front.jpg		| 100 | 0 255 0
+200-gryvnia-back.jpg		| 200 | 0 255 255200-gryvnia-front.jpg		| 200 | 0 255 0500-gryvnia-back.jpg		| 500 | 0 255 0500-gryvnia-front.jpg	| 500 | 0 255 0

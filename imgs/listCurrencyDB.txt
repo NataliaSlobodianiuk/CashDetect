@@ -1,18 +1,16 @@
-1-gryvnia-back.jpg	|   1 
-1-gryvnia-front.jpg	|   1 
-2-gryvnia-back.jpg	|   2 
-2-gryvnia-front.jpg	|   2 
-5-gryvnia-back.jpg	|   5
-5-gryvnia-front.jpg	|   5 
-10-gryvnia-back.jpg	|  10
-10-gryvnia-front.jpg	|  10 
-20-gryvnia-back.jpg	|  20 
-20-gryvnia-front.jpg	|  20 
-50-gryvnia-back.jpg	|  50 
-50-gryvnia-front.jpg	|  50 
-100-gryvnia-back.jpg	| 100 
-100-gryvnia-front.jpg	| 100 
-200-gryvnia-back.jpg	| 200 
-200-gryvnia-front.jpg	| 200 
-500-gryvnia-back.jpg	| 500 
-500-gryvnia-front.jpg	| 500 
+5eu_back.jpg		|   5 | 0 255 255
+5eu_back_2002.jpg	|   5 | 0 255 255
+5eu_front.jpg		|   5 | 0 255 0
+5eu_front_2002.jpg	|   5 | 0 255 0
+10eu_back.jpg		|  10 | 0 255 255
+10eu_front.jpg		|  10 | 0 255 0
+20eu_back.jpg		|  20 | 0 255 255
+20eu_front.jpg		|  20 | 0 255 0
+50eu_back.jpg		|  50 | 0 255 255
+50eu_front.jpg		|  50 | 0 255 0
+100eu_back.jpg		| 100 | 0 255 255
+100eu_front.jpg		| 100 | 0 255 0
+200eu_back.jpg		| 200 | 0 255 255
+200eu_front.jpg		| 200 | 0 255 0
+500eu_back.jpg		| 500 | 0 255 255
+500eu_front.jpg		| 500 | 0 255 0

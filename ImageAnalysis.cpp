@@ -21,7 +21,7 @@ bool ImageAnalysis::processImage(string _filename, bool _useCVHighGUI) {
 	// try to load image 
 	if (_filename != "") {
 		try {
-			imageToProcess = imread(TEST_IMGAGES_DIRECTORY + _filename, CV_LOAD_IMAGE_GRAYSCALE);
+			imageToProcess = imread(TEST_IMGAGES_DIRECTORY + _filename, CV_LOAD_IMAGE_COLOR);
 		}
 		catch (...) {
 			loadSuccessful = false;
@@ -73,7 +73,7 @@ bool ImageAnalysis::processImage(Mat& image, bool _useCVHighGUI) {
 			windowsInitialized = true;
 		}
 
-		//imshow(WINDOW_NAME_MAIN, originalImage);
+		imshow(WINDOW_NAME_MAIN, originalImage);
 	}
 
 	preprocessedImage = image.clone();
@@ -102,15 +102,15 @@ void updateImageAnalysis(int position, void* userData) {
 
 
 void ImageAnalysis::setupMainWindow() {
-	//GUIUtils::addHighGUIWindow(0, 0, WINDOW_NAME_MAIN, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
+	GUIUtils::addHighGUIWindow(0, 0, WINDOW_NAME_MAIN, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
 }
 
 
 void ImageAnalysis::setupResultsWindows(bool optionsOneWindow) {
-	//GUIUtils::addHighGUIWindow(1, 0, WINDOW_NAME_BILATERAL_FILTER, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
+	GUIUtils::addHighGUIWindow(1, 0, WINDOW_NAME_BILATERAL_FILTER, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
 	//GUIUtils::addHighGUIWindow(2, 0, WINDOW_NAME_HISTOGRAM_EQUALIZATION, _originalImage.size().width, _originalImage.size().height, _screenWidth, _screenHeight);
-	//GUIUtils::addHighGUIWindow(2, 0, WINDOW_NAME_HISTOGRAM_EQUALIZATION_CLAHE, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
-	//GUIUtils::addHighGUIWindow(0, 1, WINDOW_NAME_CONTRAST_AND_BRIGHTNESS, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
+	GUIUtils::addHighGUIWindow(2, 0, WINDOW_NAME_HISTOGRAM_EQUALIZATION_CLAHE, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
+	GUIUtils::addHighGUIWindow(0, 1, WINDOW_NAME_CONTRAST_AND_BRIGHTNESS, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
 	GUIUtils::addHighGUIWindow(1, 1, WINDOW_NAME_TARGET_DETECTION, originalImage.size().width, originalImage.size().height, screenWidth, screenHeight);
 
 	if (optionsOneWindow) {
