@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>../data/A4/coins_10.jpg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>../data/TrainingData/money26.jpg ../data/TrainingData/money27.jpg ../data/TrainingData/money28.jpg ../data/TrainingData/money29.jpg ../data/TrainingData/money30.jpg ../data/TrainingData/money31.jpg ../data/TrainingData/money32.jpg ../data/TrainingData/money33.jpg ../data/TrainingData/money34.jpg ../data/TrainingData/money35.jpg ../data/TrainingData/money36.jpg</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

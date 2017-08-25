@@ -15,7 +15,27 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius);
 double getBGRDifference(Mat& img, Point center);
 vector<Vec3f> getCircles(Mat& src_1C, double min_radius);
 
-int detectCoins(Mat& src, Mat& src_gray);
+void transformFourVerteces(Mat& src, vector<Point> verteces);
+
+int getCoinsSum(Mat& src, Mat& src_gray);
+Mat getA4(Mat& src);
+
+int kernel3x3[] = {
+	1, 1, 1,
+	1, 1, 1,
+	1, 1, 1
+};
+
+int kernel5x5[] = {
+	2, 0, 2, 0, 2,
+	0, 2, 0, 2, 0,
+	2, 0, 2, 0, 2,
+	0, 2, 0, 2, 0,
+	2, 0, 2, 0, 2,
+};
+
+Mat kernel = Mat(3, 3, CV_8UC1, kernel3x3);
+
 
 int main(int argc, char **argv)
 {
@@ -23,22 +43,6 @@ int main(int argc, char **argv)
 	Mat src_gray, src_gray_copy;
 	Mat mask;
 	vector<vector<Point>> contours;
-
-	int kernel3x3[] = {
-		1, 1, 1,
-		1, 1, 1,
-		1, 1, 1
-	};
-
-	int kernel5x5[] = {
-		2, 0, 2, 0, 2,
-		0, 2, 0, 2, 0,
-		2, 0, 2, 0, 2,
-		0, 2, 0, 2, 0,
-		2, 0, 2, 0, 2,
-	};
-
-	Mat kernel(3, 3, CV_8U, kernel3x3);
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -54,6 +58,10 @@ int main(int argc, char **argv)
 
 			namedWindow("Source", CV_WINDOW_FREERATIO);
 			imshow("Source", src);
+
+			src = getA4(src);
+			namedWindow("SourceA4", CV_WINDOW_FREERATIO);
+			imshow("SourceA4", src);
 
 			cvtColor(src, src_gray, CV_BGR2GRAY);
 			namedWindow("Gray", CV_WINDOW_FREERATIO);
@@ -72,16 +80,11 @@ int main(int argc, char **argv)
 			imshow("Mask After Median Blur", mask);
 
 			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 1);
-			morphologyEx(mask, mask, MORPH_CLOSE, kernel, Point(-1, -1), 4);
-			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 1);
+			morphologyEx(mask, mask, MORPH_DILATE, kernel, Point(-1, -1), 2);
 			namedWindow("Mask After Morphology", CV_WINDOW_FREERATIO);
 			imshow("Mask After Morphology", mask);
 
-			bitwise_and(src_gray, mask, src_gray);
-			namedWindow("Gray With Mask", CV_WINDOW_FREERATIO);
-			imshow("Gray With Mask", src_gray);
-
-			/*findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+			findContours(mask, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 			int j = -1;
 			for (auto cnt : contours)
 			{
@@ -89,17 +92,26 @@ int main(int argc, char **argv)
 
 				double area = contourArea(cnt);
 
-				if (area < 1200 || cnt.size() < 5)
+				if (area > 22500)
 				{
 					continue;
 				}
+				if (area < 1600 || cnt.size() < 5)
+				{
+					drawContours(mask, contours, j, Scalar(0), -1);
+					continue;
+				}
 
-				drawContours(src_gray, contours, j, Scalar(255), 3);
+				drawContours(mask, contours, j, Scalar(255), -1);
 			}
 			namedWindow("Contours", CV_WINDOW_FREERATIO);
-			imshow("Contours", src_gray);*/
+			imshow("Contours", mask);
 
-			sum = detectCoins(src, src_gray);
+			bitwise_and(src_gray, mask, src_gray);
+			namedWindow("Gray With Mask", CV_WINDOW_FREERATIO);
+			imshow("Gray With Mask", src_gray);
+
+			sum = getCoinsSum(src, src_gray);
 			namedWindow("Result", CV_WINDOW_FREERATIO);
 			imshow("Result", src);
 		}
@@ -201,7 +213,7 @@ vector<Vec3f> getCircles(Mat& src_1C, double min_radius)
 	return circles;
 }
 
-int detectCoins(Mat& src, Mat& src_1C)
+int getCoinsSum(Mat& src, Mat& src_1C)
 {
 	double min_radius = (double)max<int>(src_1C.cols, src_1C.rows) / 50;
 
@@ -234,4 +246,50 @@ int detectCoins(Mat& src, Mat& src_1C)
 			1);
 	}
 	return sum;
+}
+
+void transformFourVerteces(Mat& src, vector<Point> verteces)
+{
+	/*ToDo*/
+}
+
+Mat getA4(Mat& src)
+{
+	Mat A4 = src;
+	Mat gray, mask;
+	vector<vector<Point>> contours;
+	vector<Mat> rgb_channels;
+
+	cvtColor(src, gray, CV_BGR2GRAY);
+	GaussianBlur(gray, gray, Size(5, 5), 0);
+
+	Canny(gray, mask, 75, 200);
+
+	Mat kernel(Mat::ones(Size(9, 9), CV_8UC1));
+	filter2D(mask, mask, CV_8UC1, kernel);
+
+	findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+	int j = -1;
+	for (auto cnt : contours)
+	{
+		j++;
+
+		double arcL = arcLength(cnt, true);
+		approxPolyDP(cnt, cnt, 0.05 * arcL, true);
+
+		drawContours(mask, contours, j, Scalar(255), -1);
+		
+		if (cnt.size() == 4)
+		{
+			break;
+		}
+	}
+
+	split(src, rgb_channels);
+	bitwise_and(rgb_channels[0], mask, rgb_channels[0]);
+	bitwise_and(rgb_channels[1], mask, rgb_channels[1]);
+	bitwise_and(rgb_channels[2], mask, rgb_channels[2]);
+	merge(rgb_channels, A4);
+
+	return A4;
 }
