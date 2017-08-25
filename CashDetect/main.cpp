@@ -22,11 +22,12 @@ int main(int argc, char **argv)
 	Mat src;
 	Mat src_gray, src_gray_copy;
 	Mat mask;
+	vector<vector<Point>> contours;
 
 	int kernel3x3[] = {
-		2, 0, 2,
-		0, 2, 0,
-		2, 0, 2
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1
 	};
 
 	int kernel5x5[] = {
@@ -65,20 +66,39 @@ int main(int argc, char **argv)
 			namedWindow("Mask After Adaptive", CV_WINDOW_FREERATIO);
 			imshow("Mask After Adaptive", mask);
 
-			medianBlur(mask, mask, 11);
+			medianBlur(mask, mask, 3);
+			medianBlur(mask, mask, 5);
 			namedWindow("Mask After Median Blur", CV_WINDOW_FREERATIO);
 			imshow("Mask After Median Blur", mask);
 
-			morphologyEx(mask, mask, MORPH_DILATE, kernel, Point(-1, -1), 5);
-			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 7);
-			morphologyEx(mask, mask, MORPH_DILATE, kernel, Point(-1, -1), 5);
+			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 1);
+			morphologyEx(mask, mask, MORPH_CLOSE, kernel, Point(-1, -1), 4);
+			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 1);
 			namedWindow("Mask After Morphology", CV_WINDOW_FREERATIO);
 			imshow("Mask After Morphology", mask);
 
 			bitwise_and(src_gray, mask, src_gray);
 			namedWindow("Gray With Mask", CV_WINDOW_FREERATIO);
 			imshow("Gray With Mask", src_gray);
-			
+
+			/*findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+			int j = -1;
+			for (auto cnt : contours)
+			{
+				j++;
+
+				double area = contourArea(cnt);
+
+				if (area < 1200 || cnt.size() < 5)
+				{
+					continue;
+				}
+
+				drawContours(src_gray, contours, j, Scalar(255), 3);
+			}
+			namedWindow("Contours", CV_WINDOW_FREERATIO);
+			imshow("Contours", src_gray);*/
+
 			sum = detectCoins(src, src_gray);
 			namedWindow("Result", CV_WINDOW_FREERATIO);
 			imshow("Result", src);
