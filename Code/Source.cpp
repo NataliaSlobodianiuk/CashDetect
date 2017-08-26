@@ -105,15 +105,22 @@ int main(int argc, char* argv[]) {
 	Mat element = getStructuringElement(MORPH_RECT,
 		Size(2 * dilation_size + 1, 2 * dilation_size + 1),
 		Point(dilation_size, dilation_size));
-	threshold(res1, res1, 100, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-	for (int i = 0; i < 3; i++)
-	{
-		dilate(res1, res1, element);
-		dilate(res1, res1, element);
-		erode(res1, res1, element);
-	}
+	float kdata[] = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
+	Mat kernel(5, 5, CV_32F, kdata);
+	filter2D(res1, res1, res1.depth(), kernel);
+
+	threshold(res1, res1, 125, 0, CV_THRESH_TOZERO);
+	adaptiveThreshold(res1, res1, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 55, 0);
+
+	resize(res1, res1, Size(res1.cols / 3, res1.rows / 3));
+	resize(res1, res1, Size(res2.cols, res2.rows));
+
+	Canny(res1, res1, 60, 180, 3);
+
+	dilate(res1, res1, element);
 	erode(res1, res1, element);
-	erode(res1, res1, element);
+
+	dilate(res1, res1, element);
 
 
 	/// Find contours
