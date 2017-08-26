@@ -15,7 +15,7 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius);
 double getBGRDifference(Mat& img, Point center);
 vector<Vec3f> getCircles(Mat& src_1C, double min_radius);
 
-void transformFourVerteces(Mat& src, vector<Point> verteces);
+void fourVertecesTransform(Mat& src, vector<Point2f> verteces);
 
 int getCoinsSum(Mat& src, Mat& src_gray);
 Mat getA4(Mat& src);
@@ -34,8 +34,7 @@ int kernel5x5[] = {
 	2, 0, 2, 0, 2,
 };
 
-Mat kernel = Mat(3, 3, CV_8UC1, kernel3x3);
-
+Mat kernel = Mat(5, 5, CV_8UC1, kernel5x5);
 
 int main(int argc, char **argv)
 {
@@ -54,62 +53,30 @@ int main(int argc, char **argv)
 		int sum = 0;
 		clock_t begin = clock();
 		{
-			resize(src, src, Size(src.cols / 3, src.rows / 3));
+			int height = src.rows;
+			int width = src.cols;
 
+			if (height > width)
+			{
+				rotate(src, src, ROTATE_90_CLOCKWISE);
+			}
 			namedWindow("Source", CV_WINDOW_FREERATIO);
 			imshow("Source", src);
 
 			src = getA4(src);
+			height = src.rows;
+			width = src.cols;
+
+			if (height > width)
+			{
+				rotate(src, src, ROTATE_90_CLOCKWISE);
+			}
 			namedWindow("SourceA4", CV_WINDOW_FREERATIO);
 			imshow("SourceA4", src);
 
 			cvtColor(src, src_gray, CV_BGR2GRAY);
 			namedWindow("Gray", CV_WINDOW_FREERATIO);
 			imshow("Gray", src_gray);
-
-			src_gray.copyTo(src_gray_copy);
-
-			GaussianBlur(src_gray_copy, src_gray_copy, Size(15, 15), 0);
-			adaptiveThreshold(src_gray_copy, mask, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY_INV, 15, 1);
-			namedWindow("Mask After Adaptive", CV_WINDOW_FREERATIO);
-			imshow("Mask After Adaptive", mask);
-
-			medianBlur(mask, mask, 3);
-			medianBlur(mask, mask, 5);
-			namedWindow("Mask After Median Blur", CV_WINDOW_FREERATIO);
-			imshow("Mask After Median Blur", mask);
-
-			morphologyEx(mask, mask, MORPH_ERODE, kernel, Point(-1, -1), 1);
-			morphologyEx(mask, mask, MORPH_DILATE, kernel, Point(-1, -1), 2);
-			namedWindow("Mask After Morphology", CV_WINDOW_FREERATIO);
-			imshow("Mask After Morphology", mask);
-
-			findContours(mask, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-			int j = -1;
-			for (auto cnt : contours)
-			{
-				j++;
-
-				double area = contourArea(cnt);
-
-				if (area > 22500)
-				{
-					continue;
-				}
-				if (area < 1600 || cnt.size() < 5)
-				{
-					drawContours(mask, contours, j, Scalar(0), -1);
-					continue;
-				}
-
-				drawContours(mask, contours, j, Scalar(255), -1);
-			}
-			namedWindow("Contours", CV_WINDOW_FREERATIO);
-			imshow("Contours", mask);
-
-			bitwise_and(src_gray, mask, src_gray);
-			namedWindow("Gray With Mask", CV_WINDOW_FREERATIO);
-			imshow("Gray With Mask", src_gray);
 
 			sum = getCoinsSum(src, src_gray);
 			namedWindow("Result", CV_WINDOW_FREERATIO);
@@ -140,7 +107,7 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 
 	if (radius > min_radius && radius < min_radius * 1.5)
 	{
-		if (bgr_difference > 30)
+		if (bgr_difference > 15)
 		{
 			value = 10;
 		}
@@ -149,13 +116,13 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 			value = 2;
 		}
 	}
-	else if (radius < min_radius * 1.8 && bgr_difference > 30)
+	else if (radius < min_radius * 1.8 && bgr_difference > 15)
 	{
 		value = 25;
 	}
 	else if (radius < min_radius * 2)
 	{
-		if (bgr_difference > 30)
+		if (bgr_difference > 15)
 		{
 			value = 50;
 		}
@@ -164,7 +131,7 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 			value = 5;
 		}
 	}
-	else if (radius < min_radius * 2.3 && bgr_difference > 30)
+	else if (radius < min_radius * 2.3 && bgr_difference > 15)
 	{
 		value = 100;
 	}
@@ -195,7 +162,7 @@ double getBGRDifference(Mat& img, Point center)
 
 vector<Vec3f> getCircles(Mat& src_1C, double min_radius)
 {
-	GaussianBlur(src_1C, src_1C, Size(13, 13), 0);
+	GaussianBlur(src_1C, src_1C, Size(15, 15), 0);
 
 	vector<Vec3f> circles;
 
@@ -204,11 +171,11 @@ vector<Vec3f> getCircles(Mat& src_1C, double min_radius)
 		circles,
 		HOUGH_GRADIENT,
 		1,
-		min_radius,
+		min_radius * 1.5,
 		30,
 		30,
 		min_radius,
-		min_radius * 2);
+		min_radius * 3);
 
 	return circles;
 }
@@ -248,9 +215,33 @@ int getCoinsSum(Mat& src, Mat& src_1C)
 	return sum;
 }
 
-void transformFourVerteces(Mat& src, vector<Point> verteces)
+void fourVertecesTransform(Mat& src, vector<Point2f> verteces)
 {
-	/*ToDo*/
+	double lengthFrom0To1 = sqrt(
+		(verteces[0].x - verteces[1].x) * (verteces[0].x - verteces[1].x) +
+		(verteces[0].y - verteces[1].y) * (verteces[0].y - verteces[1].y));
+	double lengthFrom2To3 = sqrt(
+		(verteces[2].x - verteces[3].x) * (verteces[2].x - verteces[3].x) +
+		(verteces[2].y - verteces[3].y) * (verteces[2].y - verteces[3].y));
+	double maxHeight = max(lengthFrom0To1, lengthFrom2To3);
+
+	double lengthFrom0To3 = sqrt(
+		(verteces[0].x - verteces[3].x) * (verteces[0].x - verteces[3].x) +
+		(verteces[0].y - verteces[3].y) * (verteces[0].y - verteces[3].y));
+	double lengthFrom1To2 = sqrt(
+		(verteces[1].x - verteces[2].x) * (verteces[1].x - verteces[2].x) +
+		(verteces[1].y - verteces[2].y) * (verteces[1].y - verteces[2].y));
+	double maxWidth = max(lengthFrom0To3, lengthFrom1To2);
+
+	vector<Point2f> transformedVerteces = {
+		Point2f(0, 0),
+		Point2f(0, maxHeight),
+		Point2f(maxWidth, maxHeight),
+		Point2f(maxWidth, 0)
+	};
+
+	Mat transformationMatrix = getPerspectiveTransform(verteces, transformedVerteces);
+	warpPerspective(src, src, transformationMatrix, Size(maxWidth, maxHeight));
 }
 
 Mat getA4(Mat& src)
@@ -258,14 +249,13 @@ Mat getA4(Mat& src)
 	Mat A4 = src;
 	Mat gray, mask;
 	vector<vector<Point>> contours;
-	vector<Mat> rgb_channels;
 
 	cvtColor(src, gray, CV_BGR2GRAY);
-	GaussianBlur(gray, gray, Size(5, 5), 0);
+	GaussianBlur(gray, gray, Size(15, 15), 0);
 
-	Canny(gray, mask, 75, 200);
+	Canny(gray, mask, 10, 30);
 
-	Mat kernel(Mat::ones(Size(9, 9), CV_8UC1));
+	Mat kernel(Mat::ones(Size(5, 5), CV_8UC1));
 	filter2D(mask, mask, CV_8UC1, kernel);
 
 	findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -275,21 +265,28 @@ Mat getA4(Mat& src)
 		j++;
 
 		double arcL = arcLength(cnt, true);
+
+		if (arcL < ((src.cols + src.rows) / 2))
+		{
+			continue;
+		}
+
 		approxPolyDP(cnt, cnt, 0.05 * arcL, true);
 
-		drawContours(mask, contours, j, Scalar(255), -1);
-		
 		if (cnt.size() == 4)
 		{
+			drawContours(mask, contours, j, Scalar(255), -1);
+
+			vector<Point2f> verteces;
+			verteces.push_back(cnt[0]);
+			verteces.push_back(cnt[1]);
+			verteces.push_back(cnt[2]);
+			verteces.push_back(cnt[3]);
+
+			fourVertecesTransform(A4, verteces);
 			break;
 		}
 	}
-
-	split(src, rgb_channels);
-	bitwise_and(rgb_channels[0], mask, rgb_channels[0]);
-	bitwise_and(rgb_channels[1], mask, rgb_channels[1]);
-	bitwise_and(rgb_channels[2], mask, rgb_channels[2]);
-	merge(rgb_channels, A4);
 
 	return A4;
 }
