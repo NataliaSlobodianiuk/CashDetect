@@ -1,0 +1,4 @@
+﻿  main.cpp
+d:\programming\abto course\detectcashnew\detectcashnew\main.cpp(37): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+  DetectCashNew.vcxproj -> D:\Programming\ABTO course\DetectCashNew\x64\Debug\DetectCashNew.exe
+  DetectCashNew.vcxproj -> D:\Programming\ABTO course\DetectCashNew\x64\Debug\DetectCashNew.pdb (Partial PDB)
