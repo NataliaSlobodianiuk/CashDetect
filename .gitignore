@@ -1,10 +1,15 @@
 .vs/
+
+
 *.opendb
+
 *.db
+
 *.sln
 
-*.vcxproj
-*.filters
-*.user
 
-*x64/
+
+*.vcxproj*
+
+
+x64/
