@@ -1,12 +1,6 @@
-﻿  Transformations.cpp
-  ModelEstimator.cpp
-  main.cpp
-  HomographyEstimator.cpp
-  CommandLineUI.cpp
-  Generating Code...
-  Compiling...
-  CurrencyDetection.cpp
+﻿  CurrencyDetection.cpp
 d:\programming\abto course\detectcashnew\detectcashnew\currencydetection.cpp(17): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+  CommandLineUI.cpp
   Generating Code...
   DetectCashNew.vcxproj -> D:\Programming\ABTO course\DetectCashNew\x64\Debug\DetectCashNew.exe
   DetectCashNew.vcxproj -> D:\Programming\ABTO course\DetectCashNew\x64\Debug\DetectCashNew.pdb (Partial PDB)
