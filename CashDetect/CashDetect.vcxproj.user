@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>../data/TrainingData/money26.jpg ../data/TrainingData/money27.jpg ../data/TrainingData/money28.jpg ../data/TrainingData/money29.jpg ../data/TrainingData/money30.jpg ../data/TrainingData/money31.jpg ../data/TrainingData/money32.jpg ../data/TrainingData/money33.jpg ../data/TrainingData/money34.jpg ../data/TrainingData/money35.jpg ../data/TrainingData/money36.jpg ../data/TrainingData/money11.jpg ../data/TrainingData/money12.jpg ../data/TrainingData/money13.jpg ../data/TrainingData/money14.jpg ../data/TrainingData/money15.jpg ../data/TrainingData/money16.jpg ../data/TrainingData/money17.jpg ../data/TrainingData/money18.jpg ../data/TrainingData/money19.jpg ../data/TrainingData/money20.jpg ../data/TrainingData/money21.jpg ../data/TrainingData/money22.jpg ../data/TrainingData/money23.jpg ../data/TrainingData/money24.jpg ../data/TrainingData/money25.jpg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>../data/TrainingData/money26.jpg ../data/TrainingData/money27.jpg ../data/TrainingData/money28.jpg ../data/TrainingData/money29.jpg ../data/TrainingData/money30.jpg ../data/TrainingData/money31.jpg ../data/TrainingData/money32.jpg ../data/TrainingData/money33.jpg ../data/TrainingData/money34.jpg ../data/TrainingData/money35.jpg ../data/TrainingData/money36.jpg</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
