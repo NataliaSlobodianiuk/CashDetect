@@ -15,7 +15,7 @@
 
 // Project includes
 #include "Transformations.h"
-#include "Configs.h"
+#include "..\Configs.h"
 
 
 /*

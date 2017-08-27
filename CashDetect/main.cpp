@@ -1,8 +1,12 @@
-#include "CoinsDetection.h"
-#include "CurrencyDetection.h"
-#include "CommandLineUI.h"
+#include "CoinsDetection\CoinsDetection.h"
+#include "CurrencyDetection\CurrencyDetection.h"
+#include "UI\CommandLineUI.h"
 
 #include <ctime>
+
+#define COINS_SCR "Coins Source"
+#define COINS_RESULT "Coins Result"
+#define CURRENCY "Currency"
 
 int main()
 {
@@ -41,8 +45,8 @@ int main()
 
 		cout << "  >> Sum of currency at the image = " << sum << endl;
 
-		namedWindow("Currency", CV_WINDOW_FREERATIO);
-		imshow("Currency", drawing);
+		namedWindow(CURRENCY, CV_WINDOW_FREERATIO);
+		imshow(CURRENCY, drawing);
 		waitKey(0);
 	}
 	else if (userOption == 2)
@@ -53,15 +57,19 @@ int main()
 	{
 		cout << "  >> Recognize coins\n";
 
+		namedWindow(COINS_SCR, CV_WINDOW_FREERATIO);
+		imshow(COINS_SCR, image);
+
 		Mat drawing;
 		image.copyTo(drawing);
 
 		int sum = 0;
 		clock_t begin = clock();
 		{
-			// Detect coins and compute sum
 			try
 			{
+				// Detect coins and compute sum
+				// May throw exception if the program doesn't find an A4 contour
 				sum = getCoinsSum(drawing);
 			}
 			catch (exception e)
@@ -70,8 +78,8 @@ int main()
 				waitKey(0);
 				return -1;
 			}
-			namedWindow("Coins", CV_WINDOW_FREERATIO);
-			imshow("Coins", drawing);
+			namedWindow(COINS_RESULT, CV_WINDOW_FREERATIO);
+			imshow(COINS_RESULT, drawing);
 		}
 		clock_t end = clock();
 
