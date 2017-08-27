@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommandLineUI.cpp" />
     <ClCompile Include="CurrencyDetection.cpp" />
     <ClCompile Include="HomographyEstimator.cpp" />
     <ClCompile Include="main.cpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="Transformations.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommandLineUI.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="CurrencyDetection.h" />
     <ClInclude Include="HomographyEstimator.h" />

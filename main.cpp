@@ -1,26 +1,59 @@
 #include"CurrencyDetection.h"
-
+#include"CommandLineUI.h"
 
 
 int main()
 {
-	cv::Mat image = cv::imread("TestDB\\100-100-200-200__(2).jpg");
+	// Start 
+	showConsoleHeader();
+	int userOption = getUserOption();
 
-	// Rotate and resize image if it is needed
-	image = rotateAndResize(image);
+	// Filename and image for detection
+	std::string filename;
+	cv::Mat image;
 
-	cv::Mat dr;
+	// Read image
+	if (userOption != 0) {
+		filename = getFilename();
+		image = cv::imread(TEST_DB + filename);
 
-	double sum = getCurrencySum(image, dr);
+		// Check if image is empty
+		while (image.empty())
+		{
+			std::cout << "  => There is not such image!\n";
+			filename = getFilename();
+			image = cv::imread(TEST_DB + filename);
+		}
+	}
 
-	std::cout << sum << std::endl;
+	// Select mode
+	if (userOption == 1)
+	{
+		std::cout << "  >> Recognize currency using SIFT feature transform\n";
+		// Rotate and resize image if it is neened
+		image = rotateAndResize(image);
 
-	cv::namedWindow("Image", CV_WINDOW_FREERATIO);
-	cv::imshow("Image", image);
-	cv::waitKey(0);
+		// Detect currency and compute sum
+		cv::Mat drawing;
+		double sum = getCurrencySum(image, drawing);
 
-	cv::namedWindow("Cash detected", CV_WINDOW_FREERATIO);
-	cv::imshow("Cash detected", dr);
-	cv::waitKey(0);
+		std::cout << "  >> Sum of currency at the image = " << sum << std::endl;
+
+		cv::namedWindow("Currency", CV_WINDOW_FREERATIO);
+		cv::imshow("Currency", drawing);
+		cv::waitKey(0);
+	}
+	else if (userOption == 2)
+	{
+		std::cout << "  >> Recognize currency using Discrete Fourier transform\n";
+	}
+	else if (userOption == 3)
+	{
+		std::cout << "  >> Recognize coins\n";
+	}
+	else if (userOption == 0)
+	{
+		std::cout << "	Exit\n";
+	}
   	return 0;
 }
