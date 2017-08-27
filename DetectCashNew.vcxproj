@@ -115,12 +115,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CurrencyDetection.cpp" />
     <ClCompile Include="HomographyEstimator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelEstimator.cpp" />
     <ClCompile Include="Transformations.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Configs.h" />
+    <ClInclude Include="CurrencyDetection.h" />
     <ClInclude Include="HomographyEstimator.h" />
     <ClInclude Include="modelestimator.h" />
     <ClInclude Include="Transformations.h" />
