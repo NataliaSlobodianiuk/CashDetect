@@ -4,7 +4,7 @@
 
 
 // OpenCV includes
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 // project includes
 #include "HomographyEstimator.h"

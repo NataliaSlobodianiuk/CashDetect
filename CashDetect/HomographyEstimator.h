@@ -4,10 +4,10 @@
 
 
 // std includes
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 // project includes
-#include "modelestimator.h"
+#include "ModelEstimator.h"
 
 
 class HomographyEstimator : public ModelEstimator {

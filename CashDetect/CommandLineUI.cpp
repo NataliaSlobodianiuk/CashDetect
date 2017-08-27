@@ -3,9 +3,9 @@
 
 void showConsoleHeader() 
 {
-	std::cout << "####################################################################################################\n";
-	std::cout << "  >>>                                    Currency recognition                                  <<<  \n";
-	std::cout << "####################################################################################################\n\n";
+	std::cout << "################################################################################\n";
+	std::cout << "  >>>                          Currency recognition                        <<<  \n";
+	std::cout << "################################################################################\n\n";
 }
 
 
@@ -56,7 +56,7 @@ std::string getFilename()
 	// Get filename from user
 	filename = "";
 	do {
-		std::cout << "  >> Path to file inside imgs\\testDB folder: ";
+		std::cout << "  >> Path to file inside data\\examples folder: ";
 		// Get filename from user
 		getline(std::cin, filename);
 

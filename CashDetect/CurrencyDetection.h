@@ -1,21 +1,21 @@
 #pragma once
 // standart C++ includes
-#include<iostream>
-#include<vector>
-#include<string>
-#include<cmath>
-#include<math.h>
-#include<fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <math.h>
+#include <fstream>
 
 // OpenCV includes
-#include"opencv2\opencv.hpp"
-#include"opencv2\core.hpp"
-#include"opencv2\imgproc.hpp"
-#include"opencv2\xfeatures2d.hpp"
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 // Project includes
-#include"Transformations.h"
-#include"Configs.h"
+#include "Transformations.h"
+#include "Configs.h"
 
 
 /*
