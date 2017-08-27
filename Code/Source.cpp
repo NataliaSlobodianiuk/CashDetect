@@ -16,6 +16,8 @@ int main(int argc, char* argv[]) {
 	Mat input_image = imread("money3.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 	Mat cropppedImg;
 	Mat clone_img = img.clone();
+
+	int nominal;
 	RotatedRect minRect;
 	Mat M, rotated, rotated1, cropped, cropped1;
 
@@ -97,47 +99,92 @@ int main(int argc, char* argv[]) {
 	normalize(result, result, 0, 1, CV_MINMAX);
 	result.convertTo(res1, CV_8UC1, 255, 0);
 
+	medianBlur(res1, res1, 7);
+	Mat padded_image_from_magnitude;
+	Size padded_size_from_magnitude(
+		getOptimalDFTSize(res1.cols),
+		getOptimalDFTSize(res1.rows));
+	//Creating an image of the optimal size from the input
+	copyMakeBorder(res1,
+		padded_image_from_magnitude,
+		0,
+		padded_size_from_magnitude.height - res1.rows,
+		0,
+		padded_size_from_magnitude.width - res1.cols,
+		BORDER_CONSTANT,
+		Scalar::all(0));
+
+
+	//Creating a two - channel image in order to create a complex image for the Fourier transform
+	Mat planes1[] = { Mat_<float>(padded_image_from_magnitude), Mat::zeros(padded_size_from_magnitude, CV_32F) };
+	Mat complex_image_magnitude;
+	merge(planes1, 2, complex_image_magnitude);
+
+	//Direct Fourier transform
+	dft(complex_image_magnitude, complex_image_magnitude);
+
 	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
 
 	int dilation_size = 1;
 
 	Mat element = getStructuringElement(MORPH_RECT,
 		Size(2 * dilation_size + 1, 2 * dilation_size + 1),
 		Point(dilation_size, dilation_size));
-	float kdata[] = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
-	Mat kernel(5, 5, CV_32F, kdata);
-	filter2D(res1, res1, res1.depth(), kernel);
 
-	threshold(res1, res1, 125, 0, CV_THRESH_TOZERO);
-	adaptiveThreshold(res1, res1, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 55, 0);
+	//Mask  
+	//		0 2 0 2 0
+	//		2 0 2 0 2
+	//		0 2 0 2 0
+	//		2 0 2 0 2
+	//		0 2 0 2 0
+	//Mask to increase the intensity of the borders
+	Mat mask(padded_size, complex_image.type(), Scalar::all(0));
 
-	resize(res1, res1, Size(res1.cols / 3, res1.rows / 3));
-	resize(res1, res1, Size(res2.cols, res2.rows));
+	Rect mask_roi(mask.cols / 2 - 2, mask.rows / 2 - 2, 5, 5);
+	Mat mask_center(mask, mask_roi);
+	mask_center.at<Vec2f>(0, 1)[0] = 2;
+	mask_center.at<Vec2f>(0, 3)[0] = 2;
+	mask_center.at<Vec2f>(1, 0)[0] = 2;
+	mask_center.at<Vec2f>(1, 2)[0] = 2;
+	mask_center.at<Vec2f>(1, 4)[0] = 2;
+	mask_center.at<Vec2f>(2, 1)[0] = 2;
+	mask_center.at<Vec2f>(2, 3)[0] = 2;
+	mask_center.at<Vec2f>(3, 0)[0] = 2;
+	mask_center.at<Vec2f>(3, 2)[0] = 2;
+	mask_center.at<Vec2f>(3, 4)[0] = 2;
+	mask_center.at<Vec2f>(4, 1)[0] = 2;
+	mask_center.at<Vec2f>(4, 3)[0] = 2;
 
-	Canny(res1, res1, 60, 180, 3);
+	//Mask transformation into frequency domain
+	dft(mask, mask);
 
-	dilate(res1, res1, element);
-	erode(res1, res1, element);
+	//Filtration in frequency domain
+	Mat mask_filtered_image = multiplyInFrequencyDomain(complex_image_magnitude, mask);
 
-	dilate(res1, res1, element);
+	//The transformation from the frequency domain into spatial
+	dft(mask_filtered_image, mask_filtered_image, DFT_INVERSE | cv::DFT_REAL_OUTPUT);
 
+	Mat resmask;
+	//Rearrange the image so that the bright stuff is in the middle
+	rearrangeQuadrants(&mask_filtered_image);
+	normalize(mask_filtered_image, mask_filtered_image, 0, 1, CV_MINMAX);
+	mask_filtered_image.convertTo(resmask, CV_8UC1, 255, 0);
 
-	/// Find contours
-	findContours(res1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
+	//Transformation that help find contours
+	adaptiveThreshold(resmask, resmask, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 75, 0);
+	resize(resmask, resmask, Size(resmask.cols / 3, resmask.rows / 3));
+	resize(resmask, resmask, Size(res2.cols, res2.rows));
+	findContours(resmask, contours, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
 
+	//additional image
+	Mat zero = Mat::zeros(complex_image_magnitude.rows, complex_image_magnitude.cols, CV_8UC1);
+	Mat good_zero_contours = Mat::zeros(complex_image_magnitude.rows, complex_image_magnitude.cols, CV_8UC1);
 	/// Draw contours
 	for (int i = 0; i< contours.size(); i++)
 	{
-		vector<Point> approx;
-		double epsilon = 0.075* arcLength(contours[i], true);
-
-		//Approximation to select only the correct contours that can form quadrangle
-		approxPolyDP(contours[i], approx, epsilon, true);
-
-		if (approx.size() == 4 && (contourArea(contours[i])>(clone_img.rows*clone_img.cols) / 450) && (contourArea(contours[i])<(clone_img.rows*clone_img.cols) / 130))
+		//Check the contour by size
+		if ((contourArea(contours[i])>(img.rows*img.cols) / 3000) && (contourArea(contours[i]) < (img.rows*img.cols) / 200))
 		{
-			drawContours(img, contours, i, color, CV_FILLED, 8, hierarchy, 0, Point());
 			//finding minimum rectangle that contain our contour
 			minRect = minAreaRect(Mat(contours[i]));
 			Size rect_size = minRect.size;
@@ -152,29 +199,58 @@ int main(int argc, char* argv[]) {
 			warpAffine(clone_img, rotated, M, img.size(), INTER_CUBIC);
 			getRectSubPix(rotated, rect_size, minRect.center, cropped);
 
-			//get minimum rotated rectangle with contour of denomination banknotes
-			warpAffine(img, rotated1, M, img.size(), INTER_CUBIC);
-			getRectSubPix(rotated1, rect_size, minRect.center, cropped1);
-			cvtColor(cropped1, cropped1, CV_BGR2GRAY);
-			cropped1 = cropped1 <254;
-
-			//calculation average R, G, B component in rectangle with denomination banknotes
-			avgPixelIntensity = mean(cropped);
-
-			//function that calculate denomination of banknotes
-			int nominal = matcher(cropped1, avgPixelIntensity);
-			
-			//write nominal on banknot
-			if (nominal != 0)
+			//filtered contours by ratio cols to rows
+			if ((double(cropped.rows) / double(cropped.cols)) < 3 && (double(cropped.rows) / double(cropped.cols)) > 0.3333)
 			{
-				putText(clone_img, to_string(nominal), minRect.center, FONT_HERSHEY_PLAIN, 3.0, CV_RGB(0, 255, 0), 2.0);
+				drawContours(zero, contours, i, Scalar(255), -1);
 			}
-
-			cout << nominal;
 
 		}
 
 	}
+
+	dilate(zero, zero, element);
+	dilate(zero, zero, element);
+	Mat clone_zero = zero.clone();
+	vector<vector<Point>> contours_zero_image;
+
+	//find good contours, because on the previous photo has small contours that may distort important contours
+	findContours(zero, contours_zero_image, CV_RETR_TREE, CV_CHAIN_APPROX_TC89_L1, Point(0, 0));
+	for (int i = 0; i < contours_zero_image.size(); i++)
+	{
+		if ((contourArea(contours_zero_image[i])>(img.rows*img.cols) / 3000) && (contourArea(contours_zero_image[i]) < (img.rows*img.cols) / 200))
+		{
+			minRect = minAreaRect(Mat(contours_zero_image[i]));
+			Size rect_size = minRect.size;
+			if (rect_size.width < rect_size.height)
+			{
+				swap(rect_size.width, rect_size.height);
+				minRect.angle += 90;
+			}
+			M = getRotationMatrix2D(minRect.center, minRect.angle, 1.0);
+
+			//get minimum rotated rectangle with denomination banknotes
+			warpAffine(clone_zero, rotated, M, img.size(), INTER_CUBIC);
+			getRectSubPix(rotated, rect_size, minRect.center, cropped);
+
+			warpAffine(img, rotated, M, img.size(), INTER_CUBIC);
+			getRectSubPix(rotated, rect_size, minRect.center, cropped1);
+
+			//rejecting the wrong contours
+			double count_white = countNonZero(cropped);
+			double count_black = cropped.cols * cropped.rows - count_white;
+			if ((count_white / count_black)>2)
+			{
+				drawContours(good_zero_contours, contours_zero_image, i, Scalar(255), -1);
+				nominal = matcher(cropped);
+				if (nominal != 0)
+				{
+					putText(img, to_string(nominal), minRect.center, FONT_HERSHEY_PLAIN, 3.0, CV_RGB(0, 255, 0), 2.0);
+				}
+			}
+		}
+	}
+
 	namedWindow("result", 0);
 	imshow("result", clone_img);
 
@@ -182,47 +258,40 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-int matcher(Mat& crop, Scalar avgPixelIntensity)
+int matcher(Mat& crop)
 {
 	int money_emblem = 0;
-	double c = 0;
-	bool flag = false;
-
-	//array binary contour emblem of banknotes
-	Mat image_array[4];
-	image_array[0] = imread("emblem_10.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-	image_array[1] = imread("emblem_20.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-	image_array[2] = imread("emblem_50.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-	image_array[3] = imread("emblem_200.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-
-	//compare input contour with binaries emblem
-	for (int i = 0; i < 4; i++)
+	Scalar color = mean(crop);
+	//some bankcotes emblem have different ratio cols to rows
+	if ((double(crop.rows)) / (double(crop.cols)) < 0.7)
 	{
-		c = matchShapes(crop, image_array[i], CV_CONTOURS_MATCH_I1, 0.0);
-		if (c < 0.02) flag = true;
+		if ((color.val[0] > 160 && color.val[0] < 190) && (color.val[1]>150 && color.val[1] < 170) && (color.val[2]>110 && color.val[2] < 140))
+		{
+			money_emblem = 1;
+		}
+		if ((color.val[0] > 140 && color.val[0] < 170) && (color.val[1]>140 && color.val[1] < 165) && (color.val[2]>145 && color.val[2] < 170))
+		{
+			money_emblem = 200;
+		}
 	}
 
-	//if input contour owned one of binaries emblem, we can determine denomination by average pixel intensity
-	if (flag == true)
+	if (((double(crop.rows)) / (double(crop.cols)) > 0.7) && ((double(crop.rows)) / (double(crop.cols)) < 1.3))
 	{
-		if ((avgPixelIntensity.val[0]>135 && avgPixelIntensity.val[0] < 170) && (avgPixelIntensity.val[1]>85 && avgPixelIntensity.val[1] < 110) && (avgPixelIntensity.val[2]>65 && avgPixelIntensity.val[2] < 90))
+		if ((color.val[0] > 135 && color.val[0] < 160) && (color.val[1]>130 && color.val[1] < 150) && (color.val[2]>120 && color.val[2] < 140))
+		{
+			money_emblem = 5;
+		}
+		if ((color.val[0] > 130 && color.val[0] < 150) && (color.val[1]>130 && color.val[1] < 150) && (color.val[2]>160 && color.val[2] < 183))
 		{
 			money_emblem = 10;
 		}
-
-		if ((avgPixelIntensity.val[0]>145 && avgPixelIntensity.val[0] < 170) && (avgPixelIntensity.val[1]>100 && avgPixelIntensity.val[1] < 115) && (avgPixelIntensity.val[2]>30 && avgPixelIntensity.val[2] < 50))
+		if ((color.val[0] > 120 && color.val[0] < 145) && (color.val[1]>120 && color.val[1] < 145) && (color.val[2]>140 && color.val[2] < 160))
+		{
+			money_emblem = 2;
+		}
+		if ((color.val[0] > 130 && color.val[0] < 150) && (color.val[1]>145 && color.val[1] < 165) && (color.val[2]>140 && color.val[2] < 160))
 		{
 			money_emblem = 20;
-		}
-
-		if ((avgPixelIntensity.val[0]>160 && avgPixelIntensity.val[0] < 180) && (avgPixelIntensity.val[1]>80 && avgPixelIntensity.val[1] < 100) && (avgPixelIntensity.val[2]>30 && avgPixelIntensity.val[2] < 45))
-		{
-			money_emblem = 50;
-		}
-
-		if ((avgPixelIntensity.val[0]>175 && avgPixelIntensity.val[0] < 195) && (avgPixelIntensity.val[1]>100 && avgPixelIntensity.val[1] < 120) && (avgPixelIntensity.val[2]>45 && avgPixelIntensity.val[2] < 63))
-		{
-			money_emblem = 200;
 		}
 	}
 
