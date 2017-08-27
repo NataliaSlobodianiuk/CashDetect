@@ -52,7 +52,15 @@ bool verifyRectangle(const cv::Mat& image, const cv::Point2f& p1, const cv::Poin
 				double b = sqrt((p3.x - p2.x) * (p3.x - p2.x) + (p3.y - p2.y) * (p3.y - p2.y));
 				double c = sqrt((p3.x - p1.x) * (p3.x - p1.x) + (p3.y - p1.y) * (p3.y - p1.y));
 				if (c > b && c > a) {
-					return true;
+					// Check if contour is convex
+					if (cv::isContourConvex(cont))
+					{
+						return true;
+					}
+					else {
+						return false;
+					}
+					
 				}
 				else {
 					return false;
@@ -356,7 +364,7 @@ void removeInliersFromKeypointsAndDescriptors(const std::vector<cv::DMatch>& inl
 }
 int main()
 {
-	cv::Mat image = cv::imread("TestDB\\money19.jpg");
+	cv::Mat image = cv::imread("TestDB\\1-5-20-100.jpg");
 
 	// variable for counting 
 	double sum = 0;
@@ -364,179 +372,167 @@ int main()
 	// Rotate and resize image if it is needed
 	image = rotateAndResize(image);
 
-	std::vector<cv::Rect> rectangles = preprocessImageAndGetRectangles(image);
-
 	// Detect keypoints with SIFT
 	cv::Ptr<cv::xfeatures2d::SIFT> detector = cv::xfeatures2d::SIFT::create();
 
 	// get templates
 	std::vector<cv::Mat> templates = getTemplates();
+	
+	std::vector<cv::Rect> rectangles = preprocessImageAndGetRectangles(image);
 
-	for (int i = 0; i < rectangles.size(); ++i)
-	{
-		// extract image
-		cv::Mat temp = image(rectangles[i]).clone();
+	// extract image
+	cv::Mat temp = image.clone();
 
-		// Blank image mask
-		cv::Mat mask(temp.size(), CV_8U, cv::Scalar::all(255));
-
-		cv::namedWindow("Temp", CV_WINDOW_FREERATIO);
-		cv::imshow("Temp", temp);
-		cv::waitKey(0);
-		// Get keypoints adn descriptors for temp image - extracted with rectangle
-		std::vector<cv::KeyPoint> keypoint;
-		cv::Mat descriptors;
-		detector->detectAndCompute(temp, cv::Mat(), keypoint, descriptors);
+	// Mask for image
+	cv::Mat mask(image.size(), CV_8U, cv::Scalar::all(255));
 		
-		int bfNormType = cv::NORM_L2;
-		cv::BFMatcher matcher(bfNormType);
+	int bfNormType = cv::NORM_L2;
+	cv::BFMatcher matcher(bfNormType);
 
-		// Look for something in hte image while there are enough keypoints
-		while (keypoint.size() > 5) {
-			// Go throw all templates
-			for (int k = 0; k < templates.size(); ++k)
-			{
-				if (!templates[k].empty()) {
-					double max_dist = 0; double min_dist = 100;
+	// Look for something in hte image while there are enough keypoints
+	// Go throw all templates
+	for (int k = 0; k < templates.size(); ++k)
+	{
+		if (!templates[k].empty()) {
 
-					// Get keypoints and descriptors for template
-					std::vector<cv::KeyPoint> keypointTemplate;
-					cv::Mat descriptorsTemplate;
+			// variable for checking if sth was detected
+			bool detecting = true;
+			while (detecting) {
+				// make detecting false
+				detecting = false;
+				// image for masking
+				cv::Mat imageForDetection(temp.size(), temp.type(), cv::Scalar::all(0));
+				// mask it
+				temp.copyTo(imageForDetection, mask);
 
-					detector->detectAndCompute(templates[k], cv::Mat(), keypointTemplate, descriptorsTemplate);
+				// Detect keypoints and compute descriptors
+				std::vector<cv::KeyPoint> keypoint;
+				cv::Mat descriptors;
+				detector->detectAndCompute(imageForDetection, cv::Mat(), keypoint, descriptors);
 
-					// Check if there are keypoints and descriptors
-					if (!descriptorsTemplate.empty() && !keypointTemplate.empty() && !descriptors.empty()) {
+				double max_dist = 0; double min_dist = 100;
 
-						// Get matches
-						std::vector< cv::DMatch > matches;
-						matcher.match(descriptorsTemplate, descriptors, matches);
+				std::vector < cv::KeyPoint> keypointTemplate;
+				cv::Mat descriptorsTemplate;
+				// Detect keypoint and compute descriptors
+				detector->detectAndCompute(templates[k], cv::Mat(), keypointTemplate, descriptorsTemplate);
 
-						// Check if there are some matches
-						if (matches.size() > 0) {
+				// Check if there are keypoints and descriptors
+				if (!descriptorsTemplate.empty() && !keypointTemplate.empty() && !descriptors.empty()) {
+					// Get matches
+					std::vector< cv::DMatch > matches;
+					matcher.match(descriptorsTemplate, descriptors, matches);
 
-							for (int j = 0; j < descriptorsTemplate.rows; ++j)
+					// Check if there are some matches
+					if (matches.size() > 0) {
+						for (int j = 0; j < descriptorsTemplate.rows; ++j)
+						{
+							double dist = matches[j].distance;
+							if (dist < min_dist) min_dist = dist;
+							if (dist > max_dist) max_dist = dist;
+						}
+
+						// Get only "good" matches (i.e. whose distance is less than 3*min_dist )
+						std::vector< cv::DMatch > good_matches;
+						for (int m = 0; m < descriptorsTemplate.rows; ++m)
+						{
+							if (matches[m].distance <= 3 * min_dist)
 							{
-								double dist = matches[j].distance;
-								if (dist < min_dist) min_dist = dist;
-								if (dist > max_dist) max_dist = dist;
+								good_matches.push_back(matches[m]);
+							}
+						}
+
+						// Check if there is good matches
+						if (good_matches.size() > 0) {
+							//-- Localize the object
+							std::vector<cv::Point2f> obj;
+							std::vector<cv::Point2f> scene;
+							for (size_t l = 0; l < good_matches.size(); ++l)
+							{
+								//-- Get the keypoints from the good matches
+								obj.push_back(keypointTemplate[good_matches[l].queryIdx].pt);
+								scene.push_back(keypoint[good_matches[l].trainIdx].pt);
 							}
 
-							// Get only "good" matches (i.e. whose distance is less than 3*min_dist )
-							std::vector< cv::DMatch > good_matches;
-							for (int m = 0; m < descriptorsTemplate.rows; ++m)
-							{
-								if (matches[m].distance <= 3 * min_dist)
-								{
-									good_matches.push_back(matches[m]);
-								}
-							}
+							// Check if obj and scene is not empty
+							if (obj.size() >= 4 && scene.size() >= 4) {
+								cv::Mat H = Transformations::findHomography(obj, scene, cv::RANSAC);
+								if (!H.empty()) {
+									//-- Get the corners from the image_1 ( the object to be "detected" )
+									std::vector<cv::Point2f> obj_corners(4);
+									obj_corners[0] = cvPoint(0, 0); obj_corners[1] = cvPoint(templates[k].cols, 0);
+									obj_corners[2] = cvPoint(templates[k].cols, templates[k].rows); obj_corners[3] = cvPoint(0, templates[k].rows);
+									std::vector<cv::Point2f> scene_corners(4);
+									perspectiveTransform(obj_corners, scene_corners, H);
+									if (verifyRectangle(image, scene_corners[0], scene_corners[1], scene_corners[2], scene_corners[3])) {
+										// make detecting true again as we detected sth
+										detecting = true;
+										//-- Draw lines between the corners 
+										line(image, scene_corners[0], scene_corners[1], Scalar(0, 255, 0), 4);
+										line(image, scene_corners[1], scene_corners[2], Scalar(0, 255, 0), 4);
+										line(image, scene_corners[2], scene_corners[3], Scalar(0, 255, 0), 4);
+										line(image, scene_corners[3], scene_corners[0], Scalar(0, 255, 0), 4);
 
-							// Check if there is good matches
-							if (good_matches.size() > 0) {
-								cv::Mat img_matches;
-								drawMatches(templates[k], keypointTemplate, temp, keypoint,
-									good_matches, img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1),
-									std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-								//-- Localize the object
-								std::vector<cv::Point2f> obj;
-								std::vector<cv::Point2f> scene;
-								for (size_t l = 0; l < good_matches.size(); ++l)
-								{
-									//-- Get the keypoints from the good matches
-									obj.push_back(keypointTemplate[good_matches[l].queryIdx].pt);
-									scene.push_back(keypoint[good_matches[l].trainIdx].pt);
-								}
+										//	Draw contour at mask
+										std::vector<cv::Point> cont = { scene_corners[0], scene_corners[1], scene_corners[2], scene_corners[3] };
+										std::vector<std::vector<cv::Point >> contours;
+										contours.push_back(cont);
+										cv::drawContours(mask, contours, -1, cv::Scalar::all(0), -1);
 
-								// Check if obj and scene is not empty
-								if (obj.size() >= 4 && scene.size() >= 4) {
-									cv::Mat H = Transformations::findHomography(obj, scene, cv::RANSAC);
+										// Remove keypoints and descriptors from image 
+										//removeInliersFromKeypointsAndDescriptors(good_matches, keypoint, descriptors);
 
-									if (!H.empty()) {
-										//-- Get the corners from the image_1 ( the object to be "detected" )
-										std::vector<cv::Point2f> obj_corners(4);
-										obj_corners[0] = cvPoint(0, 0); obj_corners[1] = cvPoint(templates[k].cols, 0);
-										obj_corners[2] = cvPoint(templates[k].cols, templates[k].rows); obj_corners[3] = cvPoint(0, templates[k].rows);
-										std::vector<cv::Point2f> scene_corners(4);
-										perspectiveTransform(obj_corners, scene_corners, H);
-										if (verifyRectangle(image, scene_corners[0] + cv::Point2f(rectangles[i].tl()), scene_corners[1] + cv::Point2f(rectangles[i].tl()), scene_corners[2] + cv::Point2f(rectangles[i].tl()), scene_corners[3] + cv::Point2f(rectangles[i].tl()))) {
-											//-- Draw lines between the corners 
-											line(image, scene_corners[0] + cv::Point2f(rectangles[i].tl()), scene_corners[1] + cv::Point2f(rectangles[i].tl()), Scalar(0, 255, 0), 4);
-											line(image, scene_corners[1] + cv::Point2f(rectangles[i].tl()), scene_corners[2] + cv::Point2f(rectangles[i].tl()), Scalar(0, 255, 0), 4);
-											line(image, scene_corners[2] + cv::Point2f(rectangles[i].tl()), scene_corners[3] + cv::Point2f(rectangles[i].tl()), Scalar(0, 255, 0), 4);
-											line(image, scene_corners[3] + cv::Point2f(rectangles[i].tl()), scene_corners[0] + cv::Point2f(rectangles[i].tl()), Scalar(0, 255, 0), 4);
-											
-											//-- Draw lines as contours at mask image
-											std::vector<cv::Point> cont = { scene_corners[0], scene_corners[1], scene_corners[2], scene_corners[3] };
-											std::vector<std::vector<cv::Point>> contours;
-											contours.push_back(cont);
-											cv::drawContours(mask, contours, -1, cv::Scalar::all(0), -1);
-
-											// Mask temp image with mask
-											cv::Mat bl(temp.size(), temp.type(), cv::Scalar::all(0));
-
-											temp.copyTo(bl, mask);
-
-											temp = bl.clone();
-
-											cv::namedWindow("Mask", CV_WINDOW_FREERATIO);
-											cv::imshow("Mask", temp);
-											cv::waitKey(0);
-
-											// Remove keypoints and descriptors from image 
-											removeInliersFromKeypointsAndDescriptors(good_matches, keypoint, descriptors);
-
-											// Put text which was founded
-											if (k == 0 || k == 1)
-											{
-												sum += 1;
-											}
-											if (k == 2 || k == 3)
-											{
-												sum += 2;
-											}
-											if (k == 4 || k == 5)
-											{
-												sum += 5;
-											}
-											if (k == 6 || k == 7)
-											{
-												sum += 10;
-											}
-											if (k == 8 || k == 9)
-											{
-												sum += 20;
-											}
-											if (k == 10 || k == 11)
-											{
-												sum += 50;
-											}
-											if (k == 12 || k == 13)
-											{
-												sum += 100;
-											}
-											if (k == 14 || k == 15)
-											{
-												sum += 200;
-											}
-											if (k == 16 || k == 17)
-											{
-												sum += 500;
-											}
-										}// chaeck if rectangle vefiried
-									}// check if H is empty
-								}// check if obj and scene is not empty
-							}// chaeck if there is good points
-						} // check if there are some matches
-					}// check if there are keypoints and descriptors
-				}// check if template image is empty
-			}
+										// Add sum
+										if (k == 0 || k == 1)
+										{
+											sum += 1;
+										}
+										if (k == 2 || k == 3)
+										{
+											sum += 2;
+										}
+										if (k == 4 || k == 5)
+										{
+											sum += 5;
+										}
+										if (k == 6 || k == 7)
+										{
+											sum += 10;
+										}
+										if (k == 8 || k == 9)
+										{
+											sum += 20;
+										}
+										if (k == 10 || k == 11)
+										{
+											sum += 50;
+										}
+										if (k == 12 || k == 13)
+										{
+											sum += 100;
+										}
+										if (k == 14 || k == 15)
+										{
+											sum += 200;
+										}
+										if (k == 16 || k == 17)
+										{
+											sum += 500;
+										}
+									}// chaeck if rectangle vefiried								
+								}// check if H is empty
+							}// check if obj and scene is not empty
+						}// chaeck if there is good points
+					} // check if there are some matches
+				}// check if there are keypoints and descriptors
+			}// check if template image is empty	
 		}// check for keypoints
-	}	
-
+	}
+		
 	std::cout << "Total sum: " << sum << std::endl;
 	cv::namedWindow("Cash detected", CV_WINDOW_FREERATIO);
 	cv::imshow("Cash detected", image);
 	cv::waitKey(0);
- 	return 0;
+	
+  	return 0;
 }
