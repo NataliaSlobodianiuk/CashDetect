@@ -1,3 +1,10 @@
-/x64
-DetectCashNew.vcxproj
-DetectCashNew.vcxproj.filters
+.vs/
+*.opendb
+*.db
+*.sln
+
+*.vcxproj
+*.filters
+*.user
+
+*x64/
