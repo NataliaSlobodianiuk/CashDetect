@@ -40,11 +40,10 @@ int getUserOption()
 {
 	std::cout << " ## Menu:\n";
 	std::cout << "   1 - Recognize currency using SIFT feature transform\n";
-	std::cout << "   2 - Recognize currency using Discrete Fourier transform\n";
-	std::cout << "   3 - Recognize coins\n";
+	std::cout << "   2 - Recognize coins\n";
 	std::cout << "   0 - Exit\n";
 
-	return getIntCin("\n >> Option [0, 3]: ", "Select one of the options above!", 0, 4);
+	return getIntCin("\n >> Option [0, 2]: ", "Select one of the options above!", 0, 4);
 }
 
 

@@ -52,10 +52,6 @@ int main()
 	}
 	else if (userOption == 2)
 	{
-		cout << "  >> Recognize currency using Discrete Fourier transform\n";
-	}
-	else if (userOption == 3)
-	{
 		cout << "  >> Recognize coins\n";
 
 		namedWindow(COINS_SCR, CV_WINDOW_FREERATIO);
