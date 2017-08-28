@@ -4,6 +4,7 @@
 
 #include <ctime>
 
+//defines for winnames
 #define COINS_SCR "Coins Source"
 #define COINS_RESULT "Coins Result"
 #define CURRENCY "Currency"
@@ -60,6 +61,8 @@ int main()
 		namedWindow(COINS_SCR, CV_WINDOW_FREERATIO);
 		imshow(COINS_SCR, image);
 
+		//Making copy of the image in order not to draw anything
+		//on the input photo
 		Mat drawing;
 		image.copyTo(drawing);
 
@@ -68,9 +71,9 @@ int main()
 		{
 			try
 			{
-				// Detect coins and compute sum
-				// May throw exception if the program doesn't find an A4 contour
-				sum = getCoinsSum(drawing);
+				// Detect coins, draw them on the image and compute the sum
+				// Throw exception if the program doesn't find an A4 contour
+				sum = calcCoinsSum(drawing);
 			}
 			catch (exception e)
 			{

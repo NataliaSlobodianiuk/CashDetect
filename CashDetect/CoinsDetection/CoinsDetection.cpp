@@ -4,16 +4,14 @@
 #include <cmath>
 #include <string>
 
-int getCoinsSum(Mat& src)
+int calcCoinsSum(Mat& src)
 {
-	int height = src.rows;
-	int width = src.cols;
+	//ensure the image height is less than the image width,
+	//otherwise the algorithm may not work correctly
+	toHorizontalFrame(src);
 
-	if (height > width)
-	{
-		rotate(src, src, ROTATE_90_CLOCKWISE);
-	}
-
+	//separates the A4-format sheet from the background
+	//catched exception are not dealt with but thrown higher
 	try
 	{
 		src = getA4(src);
@@ -23,21 +21,22 @@ int getCoinsSum(Mat& src)
 		throw exception(e);
 	}
 
-	height = src.rows;
-	width = src.cols;
+	//once again ensure the image height is less than the image width,
+	//otherwise the algorithm may not work correctly
+	toHorizontalFrame(src);
 
-	if (height > width)
-	{
-		rotate(src, src, ROTATE_90_CLOCKWISE);
-	}
-
+	//convert to a one-channel image
 	Mat src_gray;
 	cvtColor(src, src_gray, CV_BGR2GRAY);
 
-	double min_radius = (double)max<int>(src_gray.cols, src_gray.rows) / 38;
+	//compute the minimal allowed radius of the potential coins
+	double min_radius = src_gray.rows / 38;
 
-	vector<Vec3f> circles = getCircles(src_gray, min_radius);
+	vector<Vec3f> circles = getCoins(src_gray, min_radius);
 
+	//making a copy of the image in order not to draw anything on the original
+	//image. Because the color of the next coin may be changed by drawing the
+	//center, the contours and the value of the current one.
 	Mat src_copy;
 	src.copyTo(src_copy);
 
@@ -48,14 +47,23 @@ int getCoinsSum(Mat& src)
 		double radius = circles[i][2];
 
 		int value = getCoinValue(src, center, radius, min_radius);
+		//if value is equal -1 then the potential coin is either not a coin or
+		//at least not a known one. Its value cannot be added the sum,
+		//otherwise the sum is reduces and a mistake occurs.
 		if (value != -1)
 		{
 			sum += value;
 		}
 
+		//draw the center with a green color
 		circle(src_copy, center, 1, Scalar(0, 255, 0), 3, 8, 0);
+		//draw the contours with a blue color
 		circle(src_copy, center, radius, Scalar(255, 0, 0), 5, 8, 0);
 
+		//draw the coin value on the coin center with a red color
+		//if value is equal -1 then the potential coin is either not a coin or
+		//at least not a known one.
+		//In this case not its value will be drawn but "unknown"
 		putText(
 			src_copy,
 			value == -1 ? "unknown" : to_string(value),
@@ -65,17 +73,27 @@ int getCoinsSum(Mat& src)
 			Scalar(0, 0, 255),
 			3);
 	}
+	//copy the image with all coins and potential coins marked to 
+	//the source image
 	src = src_copy;
 
 	return sum;
 }
 
-vector<Vec3f> getCircles(Mat& src_1C, double min_radius)
+vector<Vec3f> getCoins(Mat& src_1C, double min_radius)
 {
+	//use GaussianBlur to prevent the false circles from being found
 	GaussianBlur(src_1C, src_1C, Size(15, 15), 0);
 
 	vector<Vec3f> circles;
 
+	//find the circles that are the potential coins
+	//minimal radius of the potential coins is equal min_radius,
+	//minimal radius of the potential coins is equal min_radius * 1.75
+	//(the value 1.75 was calculated by hand based on the knowledge about the
+	//Ukrainian hryvnia coins sizes),
+	//the minimal distance between the centers of each two potential coins
+	//is equal to min_radius (as the coins may intersect)
 	HoughCircles(
 		src_1C,
 		circles,
@@ -94,12 +112,16 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 {
 	int value = -1;
 
+	//saturation is used to check the color of the potential coins
+	//saturation for 10, 25, 50 and 100 will be higher than 65
+	//saturation for 1, 2, 5 will be lower than 40
+	//if saturation is in range [35, 70] the coin is not verified
 	double s_avg = getSaturationAvg(img, center);
 
-	//saturation for 10, 25, 50 and 100 will be higher than 70
-	//saturation for 1, 2, 5 will be lower than 35
-	//if saturation is in range [35, 70] the coin is not verified
-	if (s_avg > 70)
+	//the coefficients on which the min_radius value is multiplied in each
+	//if-else statement were calculated by hand based on the knowledge about
+	//the Ukrainian hryvnia coins sizes
+	if (s_avg > 65)
 	{
 		if (radius >= min_radius && radius < min_radius * 1.1)
 		{
@@ -118,7 +140,7 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 			value = 100;
 		}
 	}
-	else if (s_avg < 35)
+	else if (s_avg < 40)
 	{
 		if (radius >= min_radius && radius < min_radius * 1.1)
 		{
@@ -142,15 +164,28 @@ double getSaturationAvg(Mat& img, Point center)
 	Mat hsv;
 	cvtColor(img, hsv, CV_RGB2HSV);
 
+	//hsv[1] a one-channel image (saturation channel)  
 	double s_avg = 0;
-
-	for (int i = -5; i <= 5; i++)
+	//sums the saturation value of 5-pixel cross
+	for (int i = -4; i <= 4; i++)
 	{
+		//pass through x-axis
 		s_avg += hsv.at<Vec3b>(center.y, center.x + i)[1];
+		//pass through y-axis
 		s_avg += hsv.at<Vec3b>(center.y + i, center.x)[1];
 	}
-
-	s_avg /= 21;
+	//divided into 9 * 2, where 9 is the number of pixels in a single axis
+	//pass through, and 2 is the number of such passes (x-axis, y-axis)
+	//notice that the central pixes saturation value is added twice
+	s_avg /= 18;
 
 	return s_avg;
+}
+
+void toHorizontalFrame(Mat& img)
+{
+	if (img.rows > img.cols)
+	{
+		rotate(img, img, ROTATE_90_CLOCKWISE);
+	}
 }
