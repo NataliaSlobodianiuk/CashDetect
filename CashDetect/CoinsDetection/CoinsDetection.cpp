@@ -30,7 +30,7 @@ int calcCoinsSum(Mat& src)
 	cvtColor(src, src_gray, CV_BGR2GRAY);
 
 	//compute the minimal allowed radius of the potential coins
-	double min_radius = src_gray.rows / 38;
+	double min_radius = src_gray.cols / 38;
 
 	vector<Vec3f> circles = getCoins(src_gray, min_radius);
 
@@ -40,13 +40,16 @@ int calcCoinsSum(Mat& src)
 	Mat src_copy;
 	src.copyTo(src_copy);
 
+	Mat hsv;
+	cvtColor(src_copy, hsv, CV_RGB2HSV);
+
 	int sum = 0;
 	for (size_t i = 0; i < circles.size(); i++)
 	{
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		double radius = circles[i][2];
 
-		int value = getCoinValue(src, center, radius, min_radius);
+		int value = getCoinValue(hsv, center, radius, min_radius);
 		//if value is equal -1 then the potential coin is either not a coin or
 		//at least not a known one. Its value cannot be added the sum,
 		//otherwise the sum is reduces and a mistake occurs.
@@ -98,30 +101,30 @@ vector<Vec3f> getCoins(Mat& src_1C, double min_radius)
 		src_1C,
 		circles,
 		HOUGH_GRADIENT,
-		1,
+		2,
 		min_radius,
-		30,
 		50,
+		150,
 		min_radius,
 		min_radius * 1.75);
 
 	return circles;
 }
 
-int getCoinValue(Mat& img, Point center, double radius, double min_radius)
+int getCoinValue(Mat& img_hsv, Point center, double radius, double min_radius)
 {
 	int value = -1;
 
 	//saturation is used to check the color of the potential coins
-	//saturation for 10, 25, 50 and 100 will be higher than 65
-	//saturation for 1, 2, 5 will be lower than 40
-	//if saturation is in range [35, 70] the coin is not verified
-	double s_avg = getSaturationAvg(img, center);
+	//saturation for 10, 25, 50 and 100 will be higher than 75
+	//saturation for 1, 2, 5 will be lower than 35
+	//if saturation is in range [35, 75] the coin is not verified
+	double s_avg = getSaturationAvg(img_hsv, center);
 
 	//the coefficients on which the min_radius value is multiplied in each
 	//if-else statement were calculated by hand based on the knowledge about
 	//the Ukrainian hryvnia coins sizes
-	if (s_avg > 65)
+	if (s_avg > 75)
 	{
 		if (radius >= min_radius && radius < min_radius * 1.1)
 		{
@@ -140,7 +143,7 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 			value = 100;
 		}
 	}
-	else if (s_avg < 40)
+	else if (s_avg < 35)
 	{
 		if (radius >= min_radius && radius < min_radius * 1.1)
 		{
@@ -159,20 +162,17 @@ int getCoinValue(Mat& img, Point center, double radius, double min_radius)
 	return value;
 }
 
-double getSaturationAvg(Mat& img, Point center)
+double getSaturationAvg(Mat& img_hsv, Point center)
 {
-	Mat hsv;
-	cvtColor(img, hsv, CV_RGB2HSV);
-
 	//hsv[1] a one-channel image (saturation channel)  
 	double s_avg = 0;
 	//sums the saturation value of 5-pixel cross
 	for (int i = -4; i <= 4; i++)
 	{
 		//pass through x-axis
-		s_avg += hsv.at<Vec3b>(center.y, center.x + i)[1];
+		s_avg += img_hsv.at<Vec3b>(center.y, center.x + i)[1];
 		//pass through y-axis
-		s_avg += hsv.at<Vec3b>(center.y + i, center.x)[1];
+		s_avg += img_hsv.at<Vec3b>(center.y + i, center.x)[1];
 	}
 	//divided into 9 * 2, where 9 is the number of pixels in a single axis
 	//pass through, and 2 is the number of such passes (x-axis, y-axis)
